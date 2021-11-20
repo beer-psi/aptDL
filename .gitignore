@@ -1,0 +1,16 @@
+# Repos and stuff for testing
+output
+chariz
+packix
+Packages
+Packages.* 
+
+# 7zip
+7za.*
+7zxa.*
+
+# aria2 stuff
+aria2.txt
+
+# old dead code
+main.py
