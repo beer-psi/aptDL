@@ -6,7 +6,7 @@ param (
     [string][Parameter(Position=1)][alias('o')]$output = ".\output",
     [double][alias('c','cd')]$cooldown = 5
 )
-$formatted = $true
+$original = $false
 
 . "$PSScriptRoot/download.ps1"
 $files = @(".\7za.exe", ".\7za.dll", ".\7zxa.dll")
@@ -16,7 +16,7 @@ foreach ($file in $files){
     }
 }
 
-function Get-Repo($url, $output, $cooldown, $keep = $true) {
+function Get-Repo($url, $output, $cooldown, $keep = $false) {
     $output = Join-Path $PSScriptRoot $output
     if (-not (Test-Path $output)) {
         mkdir $output
@@ -62,11 +62,11 @@ function Get-Repo($url, $output, $cooldown, $keep = $true) {
     for ($i = 0; $i -lt $length; $i++) {
         $curr = $i + 1
         $prepend = "($curr/$length)"
-        if (!$keep) {
-            $filename = $namesList[$i] + "-" + $versList[$i] + ".deb"
+        if ($keep) {
+            $filename = [System.IO.Path]::GetFileName($linksList[$i])           
         }
         else {
-            $filename = [System.IO.Path]::GetFileName($linksList[$i])
+            $filename = $namesList[$i] + "-" + $versList[$i] + ".deb"
         }
 
         if (!(Test-Path (Join-Path $output $namesList[$i]))) {
@@ -118,5 +118,5 @@ function Format-Url {
     return $url
 }
 
-Get-Repo $link $output $cooldown $formatted
+Get-Repo $link $output $cooldown $original
 
