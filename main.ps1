@@ -1,3 +1,4 @@
+[cmdletbinding()]
 param (
     [Parameter(Position=0, Mandatory=$true)]
     [alias('s')]
@@ -94,12 +95,14 @@ function Get-Repo($url, $output, $cooldown, $original) {
         else {
             $filename = $namesList[$i] + "-" + $versList[$i] + ".deb"
         }
+        $filename = Remove-InvalidFileNameChars $filename -Replacement "_"
 
         if (!(Test-Path (Join-Path $output $namesList[$i]))) {
             mkdir (Join-Path $output $namesList[$i]) > $null
         }
 
         try {
+            Write-Verbose ($url + $linksList[$i])
             dl ($url + $linksList[$i]) (Join-Path $output $namesList[$i] $filename) "" $true $prepend
         }
         catch {
@@ -107,7 +110,7 @@ function Get-Repo($url, $output, $cooldown, $original) {
                 $exc = (($Error[0].Exception | Select-String ":(?:.*):(.*)").Matches.groups[1].value | Select-String "^(.*?)[.?!]\s").Matches.groups[0].value
             }
             catch {
-                $exc = $Error[0].Exception
+                $exc = $Error[1].Exception
             }
             Write-Color "$prepend Download for $filename failed:$exc" -color Red
         } 
@@ -142,6 +145,20 @@ function Format-Url {
         $url = $url + "/"
     }
     return $url
+}
+
+function Remove-InvalidFileNameChars {
+    param(
+        [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [String[]]$Name,
+
+        [Parameter(Position=1)]
+        [String]$Replacement=''
+    )
+    $arrInvalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+    $invalidChars = [RegEx]::Escape(-join $arrInvalidChars)
+
+    [RegEx]::Replace($Name, "[$invalidChars]", $Replacement)
 }
 Get-Repo $link $output $cooldown $original
 
