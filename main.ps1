@@ -1,10 +1,26 @@
 param (
-    [string][Parameter(Position=0)][alias('s')]$link,
-    [string][alias('f')]$file,
-    [switch][Parameter(ParameterSetName="original")][alias('orig','keep','co')]$original,
-    [switch][Parameter(ParameterSetName="formatted")][alias('format','cr')]$formatted,
-    [string][Parameter(Position=1)][alias('o')]$output = ".\output",
-    [double][alias('c','cd')]$cooldown = 5
+    [Parameter(Position=0, Mandatory=$true)]
+    [alias('s')]
+    [string]$link,
+
+    [Parameter(Position=1)]
+    [alias('o')]
+    [string]$output = ".\output",
+
+    [alias('f')]
+    [string]$file,
+
+
+    [alias('c','cd')]
+    [double]$cooldown = 5,
+
+    [Parameter(ParameterSetName="original", Mandatory=$true)]
+    [alias('orig','keep','co')]
+    [switch]$original,
+
+    [Parameter(ParameterSetName="formatted", Mandatory=$true)]
+    [alias('format','cr')]
+    [switch]$formatted
 )
 
 if (-not ($original.IsPresent -or $formatted.IsPresent)){
