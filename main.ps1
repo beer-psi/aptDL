@@ -1,12 +1,22 @@
 param (
     [string][Parameter(Position=0)][alias('s')]$link,
     [string][alias('f')]$file,
-    [switch][alias('orig','keep','co')]$original,
-    [switch][alias('format','cr')]$formatted,
+    [switch][Parameter(ParameterSetName="original")][alias('orig','keep','co')]$original,
+    [switch][Parameter(ParameterSetName="formatted")][alias('format','cr')]$formatted,
     [string][Parameter(Position=1)][alias('o')]$output = ".\output",
     [double][alias('c','cd')]$cooldown = 5
 )
-$original = $false
+
+if (-not ($original.IsPresent -or $formatted.IsPresent)){
+    $original = $false
+}
+elseif ($formatted.IsPresent -eq $true) {
+    $original = $false
+}
+else {
+    $original = $original.IsPresent
+}
+
 
 . "$PSScriptRoot/download.ps1"
 $files = @(".\7za.exe", ".\7za.dll", ".\7zxa.dll")
@@ -16,7 +26,7 @@ foreach ($file in $files){
     }
 }
 
-function Get-Repo($url, $output, $cooldown, $keep = $false) {
+function Get-Repo($url, $output, $cooldown, $original) {
     $output = Join-Path $PSScriptRoot $output
     if (-not (Test-Path $output)) {
         mkdir $output
@@ -62,7 +72,7 @@ function Get-Repo($url, $output, $cooldown, $keep = $false) {
     for ($i = 0; $i -lt $length; $i++) {
         $curr = $i + 1
         $prepend = "($curr/$length)"
-        if ($keep) {
+        if ($original) {
             $filename = [System.IO.Path]::GetFileName($linksList[$i])           
         }
         else {
@@ -117,6 +127,5 @@ function Format-Url {
     }
     return $url
 }
-
 Get-Repo $link $output $cooldown $original
 
