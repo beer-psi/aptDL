@@ -35,8 +35,9 @@ elseif ($formatted -eq $true) {
     $original = $false
 }
 
-. "$PSScriptRoot/download.ps1"
-. "$PSScriptRoot/HelperFunctions.ps1"
+Import-Module $PSScriptRoot\modules\download
+Import-Module $PSScriptRoot\modules\helper
+
 $7z = (Get-Command 7z)
 if ($null -eq $7z) {
     switch ($PSVersionTable.Platform) {

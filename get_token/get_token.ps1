@@ -15,7 +15,7 @@ Function Get-PSScriptPath {
     return (Split-Path -Path $psScriptPath)
 }
 $PSScriptPath = Get-PSScriptPath
-Import-Module $PSScriptPath\..\modules\helper
+Import-Module $PSScriptPath\modules\helper
 
 if ($PSBoundParameters.ContainsKey('url')) {
     $iqs = $url.IndexOf("?")
