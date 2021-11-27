@@ -15,7 +15,7 @@ param (
     [string]$auth,
 
     [alias('7zf', '7zc')]
-    [string]$7zfile = (Get-Command 7z),
+    [string]$7z = (Get-Command 7z),
 
     [alias('c','cd')]
     [double]$cooldown = 5,
@@ -38,7 +38,6 @@ elseif ($formatted -eq $true) {
 Import-Module $PSScriptRoot\modules\download
 Import-Module $PSScriptRoot\modules\helper
 
-$7z = (Get-Command 7z)
 if ($null -eq $7z) {
     switch ($PSVersionTable.Platform) {
         "Win32NT" {
@@ -52,7 +51,7 @@ if ($null -eq $7z) {
             $7z = "$PSScriptRoot\7za.exe"
         }
         "Unix" {
-           throw "7z is either not installed, or not available in PATH. Install it from your package manager.`nIf you know where the 7z executable is, use the -7zf flag to specify its location."
+           throw "7z is either not installed, or not available in PATH. Install it from your package manager.`nIf you know where the 7z executable is, use the -7z flag to specify its location."
            exit
         }
     }
