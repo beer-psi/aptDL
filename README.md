@@ -5,7 +5,7 @@ Downloads Cydia repositories (paid packages not included)
 
 # Usage
 ```
-.\main.ps1 <-s REPO_URL> <-cr | -co> [-suites DIST_SUITES] [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON]
+.\main.ps1 <-s REPO_URL> <-cr | -co> [-suites DIST_SUITES] [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON] [-7z PATH]
 
 Required arguments:
   -s: Repo to download
@@ -19,6 +19,7 @@ Optional arguments:
   -cd: Time to wait between downloads (default 5 seconds, so as not to hit rate limit)
   -auth: Location of JSON file containing authentication (token, udid and device), which will be sent when downloading paid packages 
          Refer to https://developer.getsileo.app/payment-providers at the Downloads section.
+  -7z: Manually specify the path to 7z executable, in case the script can't find it itself.
 ```
 
 # Paid packages
