@@ -2,9 +2,12 @@
 param (
     [Parameter(Position=0, Mandatory=$true)]
     [alias('s')]
-    [string]$link,
+    [string]$url,
 
-    [Parameter(Position=1)]
+    [string]$suites,
+
+    [string]$components,
+
     [alias('o')]
     [string]$output = ".\output",
 
@@ -54,130 +57,135 @@ if ($null -eq $7z) {
     }
 }
 
-function Get-Repo($url, $output, $cooldown, $auth = "", $original) {
-    $output = Join-Path $PSScriptRoot $output
-    if (-not (Test-Path $output)) {
-        mkdir $output
-    }
-    $url = Format-Url -url $url
-    if (![string]::IsNullOrWhiteSpace($auth)) {
-        $endpoint = Get-PaymentEndpoint -url $url
+$output = Join-Path $PSScriptRoot $output
+if (-not (Test-Path $output)) {
+    mkdir $output
+}
+$url = Format-Url -url $url
+if (![string]::IsNullOrWhiteSpace($auth)) {
+    $endpoint = Get-PaymentEndpoint -url $url
 
-        Write-Verbose "Writing authentication info to a hashtable..."
-        $authtable = (Get-Content $auth | ConvertFrom-Json -AsHashtable)
+    Write-Verbose "Writing authentication info to a hashtable..."
+    $authtable = (Get-Content $auth | ConvertFrom-Json -AsHashtable)
 
-        try {
-            $userinfo = (Invoke-RestMethod -Method Post -Body $authtable -Uri ($endpoint + 'user_info'))
-            $username = $userinfo.user.name
-            $purchased = $userinfo.items
-            Write-Color "==> Logged in as $username" -color Blue
-            Write-Color "==> Purchased packages available for downloading:" -color Blue
-            foreach ($i in $purchased) {
-                Write-Output "      $i" 
-            }
-        }
-        catch {
-            $exc = $Error[0].Exception.Message
-            Write-Color "==> Authentication failed for the following reason: $exc" -color Red
-            Write-Color "    Skipping all packages with tag cydia::commercial"
-            $auth = ""
+    try {
+        $userinfo = (Invoke-RestMethod -Method Post -Body $authtable -Uri ($endpoint + 'user_info'))
+        $username = $userinfo.user.name
+        $purchased = $userinfo.items
+        Write-Color "==> Logged in as $username" -color Blue
+        Write-Color "==> Purchased packages available for downloading:" -color Blue
+        foreach ($i in $purchased) {
+            Write-Output "      $i" 
         }
     }
-
-    $exts = @(".bz2", "", ".xz", ".gz", ".lzma")
-    $compressed = @{
-        status = $false
-        format = ""
-    }
-    $oldpp = $ProgressPreference
-    $olderp = $ErrorActionPreference
-    $ProgressPreference = "SilentlyContinue"
-    $ErrorActionPreference = "SilentlyContinue"
-    foreach ($ext in $exts){
-        Write-Color "==> Attempting to download Packages$ext" -color Blue
-        $package = Invoke-WebRequest -UseBasicParsing ($url + "Packages" + $ext) -Headers (Get-Header) -Method Head
-        if ($package.StatusCode -ne 200) {
-            Write-Color " -> Couldn't download Packages$ext" -color Red
-            continue
-        } else {
-            Invoke-WebRequest -UseBasicParsing ($url + "Packages" + $ext) -OutFile ("Packages" + $ext) -Headers (Get-Header)
-            if ($ext -ne "") {
-                $compressed.status = $true
-                $compressed.format = $ext
-            }
-            break
-        }
-    }
-    $ProgressPreference = $oldpp
-    $ErrorActionPreference = $olderp
-
-    if ($compressed.status){
-        & $7z e ("Packages" + $compressed.format) -aoa
-    }
-
-    $linksList = @()
-    $namesList = @()
-    $versList = @()
-    $tagsList = @()
-    Get-Content Packages | ForEach-Object {
-        if ($_.StartsWith("Package: ")) {$namesList += $_ -replace '^Package: '; $tagsList += ""}
-        if ($_.StartsWith("Version: ")) {$versList += $_ -replace '^Version: '}
-        if ($_.StartsWith("Filename: ")) {$linksList += $_ -replace '^Filename: '}
-    }
-    $count = 0
-    $lastLineWasNotWhitespace = $true #Hacky hack to handle paragraphs that were separated by multiple newlines
-    Get-Content Packages | ForEach-Object {
-        if(![string]::IsNullOrWhiteSpace($_) -and !$lastLineWasNotWhitespace) {$lastLineWasNotWhitespace = $true}
-        if ($_.StartsWith("Tag: ")) {$tagsList[$count] = $_ -replace '^Tag: '}
-        if ([string]::IsNullOrWhiteSpace($_) -and $lastLineWasNotWhitespace) {$count++; $lastLineWasNotWhitespace = $false}
-    }
-
-    $length = $linksList.length
-    for ($i = 0; $i -lt $length; $i++) {
-        $curr = $i + 1
-        $prepend = "($curr/$length)"
-        if ($original) {
-            $filename = [System.IO.Path]::GetFileName($linksList[$i])           
-        }
-        else {
-            $filename = $namesList[$i] + "-" + $versList[$i] + ".deb"
-        }
-        $filename = Remove-InvalidFileNameChars $filename -Replacement "_"
-
-        try {
-            if ($tagsList[$i] -Match "cydia::commercial") {
-                if (![string]::IsNullOrWhiteSpace($auth)) {
-                    if ($purchased -contains $namesList[$i]) {
-                        $authtable.version = $versList[$i]
-                        $authtable.repo = $url
-                        $dllink = (Invoke-RestMethod -Method Post -Body $authtable -Uri ($endpoint + 'package/' + $namesList[$i] + '/authorize_download')).url
-                    }
-                    else {
-                        Write-Verbose ("Skipping unpurchased package " + $namesList[$i])
-                        continue 
-                    }
-                }
-                else {
-                    throw 'Paid package but no authentication found.'
-                }
-            }
-            else {
-                Write-Verbose ($url + $linksList[$i])
-                $dllink = ($url + $linksList[$i])
-            }
-
-            if (!(Test-Path (Join-Path $output $namesList[$i]))) {
-                mkdir (Join-Path $output $namesList[$i]) > $null
-            }
-            dl $dllink (Join-Path $output $namesList[$i] $filename) "" $true $prepend
-        }
-        catch {
-            $exc = $Error[0].Exception.Message
-            Write-Color "$prepend Download for $filename failed: $exc" -color Red
-        } 
-        Start-Sleep -Seconds ([double]$cooldown)
+    catch {
+        $exc = $Error[0].Exception.Message
+        Write-Color "==> Authentication failed for the following reason: $exc" -color Red
+        Write-Color "    Skipping all packages with tag cydia::commercial"
+        $auth = ""
     }
 }
 
-Get-Repo $link $output $cooldown $auth $original
+$disturl = Get-DistUrl -url $url -suites $suites
+$pkgfs = Get-RepoPackageFile -url $url -suites $suites
+$compressed = @{
+    status = $false
+    format = ""
+}
+$oldpp = $ProgressPreference
+$olderp = $ErrorActionPreference
+$ProgressPreference = "SilentlyContinue"
+$ErrorActionPreference = "SilentlyContinue"
+foreach ($pkgf in $pkgfs){
+    Write-Color "==> Attempting to download $pkgf" -color Blue
+    $package = Invoke-WebRequest -UseBasicParsing ($disturl + $pkgf) -Headers (Get-Header) -Method Head
+    if ($package.StatusCode -ne 200) {
+        Write-Color " -> Couldn't download $pkgf" -color Red
+        continue
+    } else {
+        $ext = [System.IO.Path]::GetExtension($pkgf)
+        Invoke-WebRequest -UseBasicParsing ($disturl + $pkgf) -OutFile ("Packages" + $ext) -Headers (Get-Header)
+        if ($ext -ne "") {
+            $compressed.status = $true
+            $compressed.format = $ext
+        }
+        break
+    }
+}
+$ProgressPreference = $oldpp
+$ErrorActionPreference = $olderp
+
+if ($compressed.status){
+    & $7z e ("Packages" + $compressed.format) -aoa
+}
+
+Write-Color "==> Processing Packages file" -color Blue
+$linksList = @()
+$namesList = @()
+$versList = @()
+$tagsList = @()
+Get-Content Packages | ForEach-Object {
+    if ($_.StartsWith("Package: ")) {$namesList += $_ -replace '^Package: '; $tagsList += ""}
+    if ($_.StartsWith("Version: ")) {$versList += $_ -replace '^Version: '}
+    if ($_.StartsWith("Filename: ")) {$linksList += $_ -replace '^Filename: '}
+}
+$count = 0
+$lastLineWasNotWhitespace = $true #Hacky hack to handle paragraphs that were separated by multiple newlines
+Get-Content Packages | ForEach-Object {
+    if(![string]::IsNullOrWhiteSpace($_) -and !$lastLineWasNotWhitespace) {$lastLineWasNotWhitespace = $true}
+    if ($_.StartsWith("Tag: ")) {$tagsList[$count] = $_ -replace '^Tag: '}
+    if ([string]::IsNullOrWhiteSpace($_) -and $lastLineWasNotWhitespace) {$count++; $lastLineWasNotWhitespace = $false}
+}
+
+Write-Color "==> Starting downloads" -color Blue
+$length = $linksList.length
+$mentioned_nonpurchases = @()
+for ($i = 0; $i -lt $length; $i++) {
+    $curr = $i + 1
+    $prepend = "($curr/$length)"
+    if ($original) {
+        $filename = [System.IO.Path]::GetFileName($linksList[$i])           
+    }
+    else {
+        $filename = $namesList[$i] + "-" + $versList[$i] + ".deb"
+    }
+    $filename = Remove-InvalidFileNameChars $filename -Replacement "_"
+
+    try {
+        if ($tagsList[$i] -Match "cydia::commercial") {
+            if (![string]::IsNullOrWhiteSpace($auth)) {
+                if ($purchased -contains $namesList[$i]) {
+                    $authtable.version = $versList[$i]
+                    $authtable.repo = $url
+                    $dllink = (Invoke-RestMethod -Method Post -Body $authtable -Uri ($endpoint + 'package/' + $namesList[$i] + '/authorize_download')).url
+                }
+                else {
+                    if ($mentioned_nonpurchases -contains $namesList[$i]) {
+                        continue
+                    }
+                    $mentioned_nonpurchases += $namesList[$i]
+                    throw "Skipping unpurchased package."
+                }
+            }
+            else {
+                throw 'Paid package but no authentication found.'
+            }
+        }
+        else {
+            Write-Verbose ($url + $linksList[$i])
+            $dllink = ($url + $linksList[$i])
+        }
+
+        if (!(Test-Path (Join-Path $output $namesList[$i]))) {
+            mkdir (Join-Path $output $namesList[$i]) > $null
+        }
+        dl $dllink (Join-Path $output $namesList[$i] $filename) "" $true $prepend
+    }
+    catch {
+        $exc = $Error[0].Exception.Message
+        Write-Color "$prepend Download for $filename failed: $exc" -color Red
+    } 
+    Start-Sleep -Seconds ([double]$cooldown)
+}
+
 

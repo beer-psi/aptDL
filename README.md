@@ -1,11 +1,11 @@
 # aptDL
 Downloads Cydia repositories (paid packages not included)
 
-Dist repos are also not supported for now.
+~~Dist repos are also not supported for now.~~ Dist repos are now working! (mostly)
 
 # Usage
 ```
-.\main.ps1 <-s REPO_URL> <-cr | -co> [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON]
+.\main.ps1 <-s REPO_URL> <-cr | -co> [-suites DIST_SUITES] [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON]
 
 Required arguments:
   -s: Repo to download
@@ -14,6 +14,7 @@ Required arguments:
 -cr and -co are mutually exclusive.
   
 Optional arguments:
+  -suites: Specify the suite you want to download from, required for dist repos. 
   -o: Output directory (relative to the script's directory, default is .\output)
   -cd: Time to wait between downloads (default 5 seconds, so as not to hit rate limit)
   -auth: Location of JSON file containing authentication (token, udid and device), which will be sent when downloading paid packages 
@@ -42,5 +43,5 @@ Then, run the `get_token.ps1` script and fill in the information. After that, a 
 Once you've finished, just call the download script with `-auth authentication.json`. Reminder that each authentication will only work with one repo.
 
 # TODO
-- [ ] Support for dist repos
+- [x] Support for dist repos
 - [ ] Input file
