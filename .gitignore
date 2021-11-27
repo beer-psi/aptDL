@@ -5,6 +5,9 @@ packix
 Packages
 Packages.* 
 
+# I do not want my token showed to the whole world ok
+auth*
+
 # 7zip
 7za.*
 7zxa.*
