@@ -39,7 +39,7 @@ Register the sileo:// protocol and point it to `get_token.exe` (Windows) or `get
 
 Then, run the `get_token.ps1` script and fill in the information. After that, a browser window will open, allowing you to login with your repo. After you've linked your "device" with the repo, a console app will appear showing your token. Verify that the token showed matches the one in `authentication.json`.
 
-Once you've finished, just call the script with `-auth authentication.json`. Reminder that each authentication will only work with one repo.
+Once you've finished, just call the download script with `-auth authentication.json`. Reminder that each authentication will only work with one repo.
 
 # TODO
 - [ ] Support for dist repos
