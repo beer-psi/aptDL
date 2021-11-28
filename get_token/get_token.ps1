@@ -15,7 +15,7 @@ Function Get-PSScriptPath {
     return (Split-Path -Path $psScriptPath)
 }
 $PSScriptPath = Get-PSScriptPath
-Import-Module $PSScriptPath\modules\helper
+Import-Module $PSScriptPath\..\modules\helper
 
 if ($PSBoundParameters.ContainsKey('url')) {
     $iqs = $url.IndexOf("?")
@@ -34,9 +34,9 @@ if ($PSBoundParameters.ContainsKey('url')) {
     Write-Output (ConvertTo-Json $output)
     
     $authentication = @{}
-    (Get-Content $PSScriptPath\authentication.json | ConvertFrom-Json).psobject.properties | ForEach-Object { $authentication[$_.Name] = $_.Value }
+    (Get-Content $PSScriptPath\..\authentication.json | ConvertFrom-Json).psobject.properties | ForEach-Object { $authentication[$_.Name] = $_.Value }
     $authentication.token = $output.token
-    ConvertTo-Json $authentication | Out-File -Encoding UTF8 $PSScriptPath\authentication.json
+    ConvertTo-Json $authentication | Out-File -Encoding UTF8 $PSScriptPath\..\authentication.json
 
     [Console]::ReadKey() > $null
 }
@@ -50,7 +50,7 @@ else {
         device = $device_id
     }
 
-    ConvertTo-Json $authentication | Out-File -Encoding UTF8 $PSScriptPath\authentication.json
+    ConvertTo-Json $authentication | Out-File -Encoding UTF8 $PSScriptPath\..\authentication.json
 
     $endpoint = Get-PaymentEndpoint -url (Format-Url -url $repo)
     Start-Process ($endpoint + "authenticate?udid=$udid&model=$device_id")
