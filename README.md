@@ -5,7 +5,7 @@ Downloads Cydia repositories (paid packages not included)
 
 # Usage
 ```
-.\main.ps1 <-s REPO_URL> <-cr | -co> [-suites DIST_SUITES] [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON] [-7z PATH]
+.\main.ps1 <-s REPO_URL> <-cr | -co> [-suites DIST_SUITES] [-p PACKAGE] [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON] [-7z PATH]
 
 Required arguments:
   -s: Repo to download
@@ -15,6 +15,7 @@ Required arguments:
   
 Optional arguments:
   -suites: Specify the suite you want to download from, required for dist repos. 
+  -p: Specify package to download, if omitted download all packages.
   -o: Output directory (relative to the script's directory, default is .\output)
   -cd: Time to wait between downloads (default 5 seconds, so as not to hit rate limit)
   -auth: Location of JSON file containing authentication (token, udid and device), which will be sent when downloading paid packages 
