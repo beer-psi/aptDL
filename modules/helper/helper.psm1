@@ -94,7 +94,9 @@ function Get-RepoPackageFile {
         [string]$suites,
 
         [Parameter(Position=2, Mandatory=$false)]
-        [string]$components
+        [string]$components,
+
+        [boolean]$zstd
     )
     $url = Format-Url -url $url
     $disturl = Get-DistUrl -url $url -suites $suites
@@ -127,5 +129,9 @@ function Get-RepoPackageFile {
     }
     $filelist = $filelist | ForEach-Object {($_ -split '\s+' -ne "Release")[2]}
     $filelist = $filelist | Select-Object -Unique | Select-String -Pattern "Packages" -Raw
+    if (!$zstd) {
+        $filelist = $filelist | Select-String -Pattern "zst" -NotMatch -Raw
+    }
+
     return $filelist
 }

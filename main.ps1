@@ -17,6 +17,9 @@ param (
     [alias('7zf', '7zc')]
     [string]$7z = (Get-Command 7z),
 
+    [alias('p')]
+    [string[]]$dlpackage,
+
     [alias('c','cd')]
     [double]$cooldown = 5,
 
@@ -28,15 +31,12 @@ param (
     [alias('format','cr')]
     [switch]$formatted
 )
-if (-not ($original -or $formatted)){
-    $original = $false
-}
-elseif ($formatted -eq $true) {
-    $original = $false
-}
+Import-Module $PSScriptRoot\modules\download -Force
+Import-Module $PSScriptRoot\modules\helper -Force
 
-Import-Module $PSScriptRoot\modules\download
-Import-Module $PSScriptRoot\modules\helper
+$url = Format-Url -url $url
+$output = Join-Path $PSScriptRoot $output
+$specific_package = $PSBoundParameters.ContainsKey('dlpackage')
 
 if ($null -eq $7z) {
     switch ($PSVersionTable.Platform) {
@@ -56,12 +56,8 @@ if ($null -eq $7z) {
         }
     }
 }
+$zstd = $null -ne (& $7z i | Select-String zstd)
 
-$output = Join-Path $PSScriptRoot $output
-if (-not (Test-Path $output)) {
-    mkdir $output
-}
-$url = Format-Url -url $url
 if (![string]::IsNullOrWhiteSpace($auth)) {
     $endpoint = Get-PaymentEndpoint -url $url
 
@@ -81,13 +77,19 @@ if (![string]::IsNullOrWhiteSpace($auth)) {
     catch {
         $exc = $Error[0].Exception.Message
         Write-Color "==> Authentication failed for the following reason: $exc" -color Red
-        Write-Color "    Skipping all packages with tag cydia::commercial"
+        Write-Color "    Skipping all packages with tag cydia::commercial" -color Red
         $auth = ""
     }
 }
 
 $disturl = Get-DistUrl -url $url -suites $suites
-$pkgfs = Get-RepoPackageFile -url $url -suites $suites
+$pkgfs = Get-RepoPackageFile -url $url -suites $suites -zstd $zstd
+if ($null -eq $pkgfs) { # Fallback handling for repos that don't put where their Packages file is in Release
+    $pkgfs = @("Packages.bz2", "Packages.gz", "Packages.lzma", "Packages.xz", "Packages")
+    if ($zstd) {
+        $pkgfs += "Packages.zst"
+    }
+}
 $compressed = @{
     status = $false
     format = ""
@@ -96,6 +98,8 @@ $oldpp = $ProgressPreference
 $olderp = $ErrorActionPreference
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
+Remove-Item Packages
+Remove-Item Pacakges.*
 foreach ($pkgf in $pkgfs){
     Write-Color "==> Attempting to download $pkgf" -color Blue
     $package = Invoke-WebRequest -UseBasicParsing ($disturl + $pkgf) -Headers (Get-Header) -Method Head
@@ -114,6 +118,10 @@ foreach ($pkgf in $pkgfs){
 }
 $ProgressPreference = $oldpp
 $ErrorActionPreference = $olderp
+if (!(Test-Path Packages) -and !(Test-Path Packages.*)) {
+    throw "Couldn't download the Packages file!"
+    exit
+}
 
 if ($compressed.status){
     & $7z e ("Packages" + $compressed.format) -aoa
@@ -137,12 +145,25 @@ Get-Content Packages | ForEach-Object {
     if ([string]::IsNullOrWhiteSpace($_) -and $lastLineWasNotWhitespace) {$count++; $lastLineWasNotWhitespace = $false}
 }
 
-Write-Color "==> Starting downloads" -color Blue
+if ($specific_package) {
+    Write-Color "==> Starting downloads for specific packages" -color Blue
+}
+else {
+    Write-Color "==> Starting downloads" -color Blue
+}
 $length = $linksList.length
-$mentioned_nonpurchases = @()
+$mentioned_nondls = @()
 for ($i = 0; $i -lt $length; $i++) {
     $curr = $i + 1
     $prepend = "($curr/$length)"
+    if ($mentioned_nondls -contains $namesList[$i]) {
+        continue
+    }
+    if ($specific_package -and !($dlpackage -contains $namesList[$i])) {
+        Write-Verbose ("Skipping unspecified package " + $namesList[$i])
+        $mentioned_nondls += $namesList[$i]
+        continue
+    }
     if ($original) {
         $filename = [System.IO.Path]::GetFileName($linksList[$i])           
     }
@@ -160,14 +181,12 @@ for ($i = 0; $i -lt $length; $i++) {
                     $dllink = (Invoke-RestMethod -Method Post -Body $authtable -Uri ($endpoint + 'package/' + $namesList[$i] + '/authorize_download')).url
                 }
                 else {
-                    if ($mentioned_nonpurchases -contains $namesList[$i]) {
-                        continue
-                    }
-                    $mentioned_nonpurchases += $namesList[$i]
+                    $mentioned_nondls += $namesList[$i]
                     throw "Skipping unpurchased package."
                 }
             }
             else {
+                $mentioned_nondls += $namesList[$i]
                 throw 'Paid package but no authentication found.'
             }
         }
