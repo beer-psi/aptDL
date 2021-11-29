@@ -1,42 +1,125 @@
+<#
+.SYNOPSIS
+    aptDL - a tool to download apt (mostly Cydia) repos
+.DESCRIPTION
+    Downloads sources and/or dist repos for archival purposes.
+.PARAMETER inputfile
+    Pass parameters from an input file, instead of from the command line.
+    Check inputfile.psd1 for more in-depth guidance.
+    If a file is specified, all other parameters passed through the command
+    line will be ignored, except -7z
+.PARAMETER url
+    The url of the repo to be downloaded
+.PARAMETER suites
+    (For dist repos only) The suite to download from.
+    If unsure, check with /etc/apt/sources.list.d on your jailbroken iDevice.
+.PARAMETER components
+    Dist repo component.
+.PARAMETER output
+    Folder to save the downloaded repo, relative to the root of the script.
+    Default value: ".\output"
+.PARAMETER cooldown
+    Seconds of cooldown between each download, intended to avoid rate limitng
+    by repos.
+    Default value: 5
+.PARAMETER original
+    Don't rename downloaded files to PACKAGENAME-VERSION.deb, keep them as-is.
+.PARAMETER formatted
+    Rename downloaded files to PACKAGENAME-VERSION.deb (default behavior)
+.PARAMETER auth
+    Pass an authentication file to the script to enable downloading of purchased
+    packages. Read README.md for how to generate this authentication file.
+.PARAMETER dlpackage
+    Packages to download specifically. Separate multiple packages with a comma.
+    Any package not in this list will be removed.
+.PARAMETER 7z
+    Manually specify the path to the 7z executable
+    Default value: output of (Get-Command 7z).Source
+.EXAMPLE
+    .\main.ps1 -url https://apt.procurs.us `
+               -suites iphoneos-arm64/1700 `
+               -output repo\procursus `
+               -cooldown 3 `
+               -dlpackage 2048,adv-cmds `
+               -original
+    Downloads the packages 2048 and adv-cmds from dist repo https://apt.procurs.us (suite iphoneos-arm64/1700)
+    Between the downloads, there is a 3-second cooldown, and the files are saved in $PSScriptRoot\repo\procursus with their original names
+.NOTES
+    Author: beerpsi/extradummythicc
+    Portions of the code was taken from Scoop (https://github.com/ScoopInstaller/Scoop/)
+#>
+#requires -version 5
 [cmdletbinding()]
 param (
-    [Parameter(Position=0, Mandatory=$true)]
+    [Parameter(ParameterSetName="help", Mandatory)]
+    [alias('h')]
+    [switch]$help,
+
+    [Parameter(Position=0, ParameterSetName="input", Mandatory)]
+    [alias('i', 'input')]
+    [string]$inputfile,
+
+    [Parameter(Position=0, ParameterSetName="url", Mandatory)]
     [alias('s')]
     [string]$url,
 
+    [Parameter(Position=1, ParameterSetName="url")]
     [string]$suites,
 
+    [Parameter(Position=2, ParameterSetName="url")]
     [string]$components,
 
+    [Parameter(ParameterSetName="url")]
     [alias('o')]
     [string]$output = ".\output",
 
+    [Parameter(ParameterSetName="url")]
     [alias('af')]
     [string]$auth,
 
+    [Parameter(ParameterSetName="url")]
+    [Parameter(ParameterSetName="input")]
     [alias('7zf', '7zc')]
-    [string]$7z = (Get-Command 7z),
+    [string]$7z = (Get-Command 7z).Source,
 
+    [Parameter(ParameterSetName="url")]
     [alias('p')]
     [string[]]$dlpackage,
 
+    [Parameter(ParameterSetName="url")]
     [alias('c','cd')]
     [double]$cooldown = 5,
 
-    [Parameter(ParameterSetName="original", Mandatory=$true)]
+    [Parameter(ParameterSetName="url")]
     [alias('orig','keep','co')]
     [switch]$original,
 
-    [Parameter(ParameterSetName="formatted", Mandatory=$true)]
+    [Parameter(ParameterSetName="url")]
     [alias('format','cr')]
-    [switch]$formatted
-)
-Import-Module $PSScriptRoot\modules\download -Force
-Import-Module $PSScriptRoot\modules\helper -Force
+    [switch]$formatted,
 
-$url = Format-Url -url $url
-$output = Join-Path $PSScriptRoot $output
-$specific_package = $PSBoundParameters.ContainsKey('dlpackage')
+    [Parameter(ParameterSetName="url")]
+    [alias('skip', 'sd')]
+    [switch]$skipDownloaded
+)
+if ($help -or ($null -eq $PSBoundParameters.Keys)) {
+    Get-Help $MyInvocation.MyCommand.Path -Detailed
+    break
+}
+
+. "$PSScriptRoot\modules\download.ps1"
+. "$PSScriptRoot\modules\helper.ps1"
+. "$PSScriptRoot\modules\repo.ps1"
+
+if ($PSBoundParameters.ContainsKey('formatted')) {
+    $original = !$formatted
+}
+elseif ($PSBoundParameters.ContainsKey('original')) {
+    
+}
+else {
+    $original = $false
+}
 
 if ($null -eq $7z) {
     switch ($PSVersionTable.Platform) {
@@ -56,155 +139,22 @@ if ($null -eq $7z) {
         }
     }
 }
-$zstd = $null -ne (& $7z i | Select-String zstd)
 
-if (![string]::IsNullOrWhiteSpace($auth)) {
-    $endpoint = Get-PaymentEndpoint -url $url
-
-    Write-Verbose "Writing authentication info to a hashtable..."
-    $authtable = (Get-Content $auth | ConvertFrom-Json -AsHashtable)
-
-    try {
-        $userinfo = (Invoke-RestMethod -Method Post -Body $authtable -Uri ($endpoint + 'user_info'))
-        $username = $userinfo.user.name
-        $purchased = $userinfo.items
-        Write-Color "==> Logged in as $username" -color Blue
-        Write-Color "==> Purchased packages available for downloading:" -color Blue
-        foreach ($i in $purchased) {
-            Write-Output "      $i" 
+if ($PSBoundParameters.ContainsKey('inputfile')) {
+    Write-Color "==> Reading input file" -color Blue
+    $tasks = Format-InputData (Import-PowerShellDataFile $inputfile)
+    foreach ($task in $tasks.All) {
+        Write-Color ("==> " + $task.url) -color Blue
+        try {
+            Write-Output $ta
+            Get-Repo $task.url $task.suites $task.components $task.output $task.cooldown $7z $task.original $task.auth $task.skipDownloaded $task.dlpackage
+        }
+        catch {
+            Write-Color ("==> Unhandled exception: {0}" -f $Error[0].Exception.Message) -color Red
+            continue
         }
     }
-    catch {
-        $exc = $Error[0].Exception.Message
-        Write-Color "==> Authentication failed for the following reason: $exc" -color Red
-        Write-Color "    Skipping all packages with tag cydia::commercial" -color Red
-        $auth = ""
-    }
-}
-
-$disturl = Get-DistUrl -url $url -suites $suites
-$pkgfs = Get-RepoPackageFile -url $url -suites $suites -zstd $zstd
-if ($null -eq $pkgfs) { # Fallback handling for repos that don't put where their Packages file is in Release
-    $pkgfs = @("Packages.bz2", "Packages.gz", "Packages.lzma", "Packages.xz", "Packages")
-    if ($zstd) {
-        $pkgfs += "Packages.zst"
-    }
-}
-$compressed = @{
-    status = $false
-    format = ""
-}
-$oldpp = $ProgressPreference
-$olderp = $ErrorActionPreference
-$ProgressPreference = "SilentlyContinue"
-$ErrorActionPreference = "SilentlyContinue"
-Remove-Item Packages
-Remove-Item Pacakges.*
-foreach ($pkgf in $pkgfs){
-    Write-Color "==> Attempting to download $pkgf" -color Blue
-    $package = Invoke-WebRequest -UseBasicParsing ($disturl + $pkgf) -Headers (Get-Header) -Method Head
-    if ($package.StatusCode -ne 200) {
-        Write-Color " -> Couldn't download $pkgf" -color Red
-        continue
-    } else {
-        $ext = [System.IO.Path]::GetExtension($pkgf)
-        Invoke-WebRequest -UseBasicParsing ($disturl + $pkgf) -OutFile ("Packages" + $ext) -Headers (Get-Header)
-        if ($ext -ne "") {
-            $compressed.status = $true
-            $compressed.format = $ext
-        }
-        break
-    }
-}
-$ProgressPreference = $oldpp
-$ErrorActionPreference = $olderp
-if (!(Test-Path Packages) -and !(Test-Path Packages.*)) {
-    throw "Couldn't download the Packages file!"
-    exit
-}
-
-if ($compressed.status){
-    & $7z e ("Packages" + $compressed.format) -aoa
-}
-
-Write-Color "==> Processing Packages file" -color Blue
-$linksList = @()
-$namesList = @()
-$versList = @()
-$tagsList = @()
-Get-Content Packages | ForEach-Object {
-    if ($_.StartsWith("Package: ")) {$namesList += $_ -replace '^Package: '; $tagsList += ""}
-    if ($_.StartsWith("Version: ")) {$versList += $_ -replace '^Version: '}
-    if ($_.StartsWith("Filename: ")) {$linksList += $_ -replace '^Filename: '}
-}
-$count = 0
-$lastLineWasNotWhitespace = $true #Hacky hack to handle paragraphs that were separated by multiple newlines
-Get-Content Packages | ForEach-Object {
-    if(![string]::IsNullOrWhiteSpace($_) -and !$lastLineWasNotWhitespace) {$lastLineWasNotWhitespace = $true}
-    if ($_.StartsWith("Tag: ")) {$tagsList[$count] = $_ -replace '^Tag: '}
-    if ([string]::IsNullOrWhiteSpace($_) -and $lastLineWasNotWhitespace) {$count++; $lastLineWasNotWhitespace = $false}
-}
-
-if ($specific_package) {
-    Write-Color "==> Starting downloads for specific packages" -color Blue
 }
 else {
-    Write-Color "==> Starting downloads" -color Blue
+    Get-Repo $url $suites $components $output $cooldown $7z $original $auth $skipDownloaded $dlpackage 
 }
-$length = $linksList.length
-$mentioned_nondls = @()
-for ($i = 0; $i -lt $length; $i++) {
-    $curr = $i + 1
-    $prepend = "($curr/$length)"
-    if ($mentioned_nondls -contains $namesList[$i]) {
-        continue
-    }
-    if ($specific_package -and !($dlpackage -contains $namesList[$i])) {
-        Write-Verbose ("Skipping unspecified package " + $namesList[$i])
-        $mentioned_nondls += $namesList[$i]
-        continue
-    }
-    if ($original) {
-        $filename = [System.IO.Path]::GetFileName($linksList[$i])           
-    }
-    else {
-        $filename = $namesList[$i] + "-" + $versList[$i] + ".deb"
-    }
-    $filename = Remove-InvalidFileNameChars $filename -Replacement "_"
-
-    try {
-        if ($tagsList[$i] -Match "cydia::commercial") {
-            if (![string]::IsNullOrWhiteSpace($auth)) {
-                if ($purchased -contains $namesList[$i]) {
-                    $authtable.version = $versList[$i]
-                    $authtable.repo = $url
-                    $dllink = (Invoke-RestMethod -Method Post -Body $authtable -Uri ($endpoint + 'package/' + $namesList[$i] + '/authorize_download')).url
-                }
-                else {
-                    $mentioned_nondls += $namesList[$i]
-                    throw "Skipping unpurchased package."
-                }
-            }
-            else {
-                $mentioned_nondls += $namesList[$i]
-                throw 'Paid package but no authentication found.'
-            }
-        }
-        else {
-            Write-Verbose ($url + $linksList[$i])
-            $dllink = ($url + $linksList[$i])
-        }
-
-        if (!(Test-Path (Join-Path $output $namesList[$i]))) {
-            mkdir (Join-Path $output $namesList[$i]) > $null
-        }
-        dl $dllink (Join-Path $output $namesList[$i] $filename) "" $true $prepend
-    }
-    catch {
-        $exc = $Error[0].Exception.Message
-        Write-Color "$prepend Download for $filename failed: $exc" -color Red
-    } 
-    Start-Sleep -Seconds ([double]$cooldown)
-}
-
-

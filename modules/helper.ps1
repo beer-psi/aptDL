@@ -1,0 +1,74 @@
+function Get-Header {
+    $headers = @{
+        "X-Machine" = "iPhone10,5"
+        "X-Unique-ID" = "0000000000000000000000000000000000000000"
+        "X-Firmware" = "14.8"
+        "User-Agent" = "Telesphoreo APT-HTTP/1.0.999"
+    }
+    return $headers
+}
+
+function Remove-InvalidFileNameChars {
+    param(
+        [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [String[]]$Name,
+
+        [Parameter(Position=1)]
+        [String]$Replacement=''
+    )
+    $arrInvalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+    $invalidChars = [RegEx]::Escape(-join $arrInvalidChars)
+
+    [RegEx]::Replace($Name, "[$invalidChars]", $Replacement)
+}
+
+function Write-Color {
+    param (
+        [string][Parameter(Mandatory=$true, Position=0)]$str,
+        [string][Parameter(Mandatory=$true, Position=1)]$color
+    )
+    $t = $host.ui.RawUI.ForegroundColor
+    if ($color -in [enum]::GetValues([System.ConsoleColor])) {
+        $host.ui.RawUI.ForegroundColor = $color
+    }
+    else {
+        throw 'Invalid color.'
+    }
+    Write-Output $str
+    $host.ui.RawUI.ForegroundColor = $t
+}
+
+function Format-Url {
+    param (
+        [string][Parameter(Mandatory=$true)]$url
+    )
+    if (!($url.StartsWith("http://") -or $url.StartsWith("https://"))){
+        $url = 'https://' + $url
+    }
+    if (!$url.EndsWith("/")){
+        $url = $url + "/"
+    }
+    return $url
+}
+
+function Format-InputData {
+    param (
+        [Parameter(Mandatory=$true, Position=0)]
+        [Hashtable]$inputfile
+    )
+    $outputs = $inputfile
+    $globalValues = @("cooldown", "original", "output", "skipDownloaded")
+    foreach ($globalValue in $globalValues) {
+        if ($outputs.ContainsKey($globalValue)) {
+            foreach ($output in $outputs.All) {
+                if ($output.ContainsKey($globalValue)) {
+                    continue
+                }
+                else {
+                    $output[$globalValue] = $outputs[$globalValue]
+                }
+            }
+        }
+    }
+    return $outputs
+}

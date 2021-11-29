@@ -1,4 +1,4 @@
-function Get-UserAgent() {
+function Get-UserAgent {
     return "Telesphoreo APT-HTTP/1.0.999"
 }
 
