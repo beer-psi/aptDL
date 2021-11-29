@@ -5,6 +5,7 @@ param (
 )
 Add-Type -AssemblyName System.Web
 
+
 Function Get-PSScriptPath {
     if ([System.IO.Path]::GetExtension($PSCommandPath) -eq '.ps1') {
         $psScriptPath = $PSCommandPath
@@ -15,7 +16,7 @@ Function Get-PSScriptPath {
     return (Split-Path -Path $psScriptPath)
 }
 $PSScriptPath = Get-PSScriptPath
-Import-Module $PSScriptPath\..\modules\helper
+. "$PSScriptPath\..\modules\helper.ps1"
 
 if ($PSBoundParameters.ContainsKey('url')) {
     $iqs = $url.IndexOf("?")
