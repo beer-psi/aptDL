@@ -17,6 +17,7 @@ Function Get-PSScriptPath {
 }
 $PSScriptPath = Get-PSScriptPath
 . "$PSScriptPath\..\modules\helper.ps1"
+. "$PSScriptPath\..\modules\repo.ps1"
 
 if ($PSBoundParameters.ContainsKey('url')) {
     $iqs = $url.IndexOf("?")
