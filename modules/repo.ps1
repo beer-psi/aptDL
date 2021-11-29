@@ -85,8 +85,8 @@ function Get-RepoPackageFile {
 
 function Get-Repo($url, $suites, $components, $output = ".\output", $cooldown, $7z, $original = $false, $auth, $skipDownloaded = $true, $dlpackage) {
     $url = Format-Url -url $url
-    $output = (Join-Path $PSScriptRoot $output)
     $zstd = $null -ne (& $7z i | Select-String zstd)
+    $output = (Resolve-Path $output)
     $specific_package = $PSBoundParameters.ContainsKey('dlpackage') -and ($dlpackage.Count -gt 0)
     if (![string]::IsNullOrWhiteSpace($auth) -and (Test-Path $auth)) {
         $endpoint = Get-PaymentEndpoint -url $url
