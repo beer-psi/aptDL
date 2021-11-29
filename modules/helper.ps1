@@ -22,6 +22,21 @@ function Remove-InvalidFileNameChars {
     [RegEx]::Replace($Name, "[$invalidChars]", $Replacement)
 }
 
+function Resolve-PathForced {
+    param (
+        [Parameter(Position=0, Mandatory)]
+        [string]$FileName
+    )
+
+    $FileName = Resolve-Path $FileName -ErrorAction SilentlyContinue `
+                                       -ErrorVariable _frperror
+    if (-not($FileName)) {
+        $FileName = $_frperror[0].TargetObject
+    }
+
+    return $FileName
+}
+
 function Write-Color {
     param (
         [string][Parameter(Mandatory=$true, Position=0)]$str,

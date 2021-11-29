@@ -86,7 +86,7 @@ function Get-RepoPackageFile {
 function Get-Repo($url, $suites, $components, $output = ".\output", $cooldown, $7z, $original = $false, $auth, $skipDownloaded = $true, $dlpackage) {
     $url = Format-Url -url $url
     $zstd = $null -ne (& $7z i | Select-String zstd)
-    $output = (Resolve-Path $output).Path
+    $output = Resolve-PathForced $output
     $specific_package = $PSBoundParameters.ContainsKey('dlpackage') -and ($dlpackage.Count -gt 0)
     if (![string]::IsNullOrWhiteSpace($auth) -and (Test-Path $auth)) {
         $endpoint = Get-PaymentEndpoint -url $url
@@ -225,13 +225,14 @@ function Get-Repo($url, $suites, $components, $output = ".\output", $cooldown, $
                 }
             }
             else {
-                Write-Verbose ($url + $linksList[$i])
                 $dllink = ($url + $linksList[$i])
             }
 
             if (!(Test-Path (Join-Path $output $namesList[$i]))) {
                 mkdir (Join-Path $output $namesList[$i]) > $null
             }
+            Write-Verbose $dllink
+            Write-Verbose (Join-Path $output $namesList[$i] $filename)
             dl $dllink (Join-Path $output $namesList[$i] $filename) "" $true $prepend
         }
         catch {
