@@ -5,7 +5,7 @@ Downloads Cydia repositories (paid packages not included)
 
 # Usage
 ```
-.\main.ps1 <-s REPO_URL> <-cr | -co> [-suites DIST_SUITES] [-p PACKAGE] [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON] [-7z PATH]
+.\main.ps1 <-s REPO_URL> <-cr | -co> [-help] [-suites DIST_SUITES] [-p PACKAGE] [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON] [-7z PATH] [-skipDownloaded]
 
 Required arguments:
   -s: Repo to download
@@ -14,6 +14,7 @@ Required arguments:
 -cr and -co are mutually exclusive.
   
 Optional arguments:
+  -help: Prints a detailed help message
   -suites: Specify the suite you want to download from, required for dist repos. 
   -p: Specify package to download, if omitted download all packages.
   -o: Output directory (relative to the script's directory, default is .\output)
@@ -21,9 +22,10 @@ Optional arguments:
   -auth: Location of JSON file containing authentication (token, udid and device), which will be sent when downloading paid packages 
          Refer to https://developer.getsileo.app/payment-providers at the Downloads section.
   -7z: Manually specify the path to 7z executable, in case the script can't find it itself.
+  -skipDownloaded: skip packages that are already downloaded.
 ```
 
-# Paid packages
+# Paid packages with the Payment Providers API
 Edit the accompanied authentication.json with your own details, then invoke the script with `-auth .\authentication.json`
 
 Example `authentication.json`:
@@ -35,6 +37,7 @@ Example `authentication.json`:
 }
 ```
 ## Building authentication.json
+### Method 1: Capture the callback URL (works on any repo with the Payment Providers API implemented)
 Register the sileo:// protocol and point it to `get_token.exe` (Windows) or `get_token.ps1` (Linux).
 - [Registering a URL protocol on Windows](https://stackoverflow.com/questions/80650/how-do-i-register-a-custom-url-protocol-in-windows)
 - [Registering a URL protocol on Linux](https://unix.stackexchange.com/questions/497146/create-a-custom-url-protocol-handler)
@@ -43,6 +46,9 @@ Register the sileo:// protocol and point it to `get_token.exe` (Windows) or `get
 Then, run the `get_token.ps1` script and fill in the information. After that, a browser window will open, allowing you to login with your repo. After you've linked your "device" with the repo, a console app will appear showing your token. Verify that the token showed matches the one in `authentication.json`.
 
 Once you've finished, just call the download script with `-auth authentication.json`. Reminder that each authentication will only work with one repo.
+
+### Method 2: Manually making cURL requests to the API
+[Refer to this wiki page.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
 
 # TODO
 - [x] Support for dist repos
