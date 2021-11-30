@@ -52,6 +52,7 @@ function Get-RepoPackageFile {
     $olderp = $ErrorActionPreference
     $ProgressPreference = "SilentlyContinue"
     $ErrorActionPreference = "SilentlyContinue"
+    Remove-Item Release
     if ((Invoke-WebRequest -UseBasicParsing ($disturl + 'Release') -Method Head).StatusCode -eq 200) {
         Invoke-WebRequest -UseBasicParsing ($disturl + 'Release') -OutFile Release
     }
@@ -128,8 +129,7 @@ function Get-Repo($url, $suites, $components, $output = ".\output", $cooldown, $
     $olderp = $ErrorActionPreference
     $ProgressPreference = "SilentlyContinue"
     $ErrorActionPreference = "SilentlyContinue"
-    Remove-Item Packages
-    Remove-Item Pacakges.*
+    Remove-Item Packages Packages*
     foreach ($pkgf in $pkgfs){
         Write-Color "==> Attempting to download $pkgf" -color Blue
         $package = Invoke-WebRequest -UseBasicParsing ($disturl + $pkgf) -Headers (Get-Header) -Method Head
@@ -192,6 +192,7 @@ function Get-Repo($url, $suites, $components, $output = ".\output", $cooldown, $
             $mentioned_nondls += $namesList[$i]
             continue
         }
+        
 
         $curr = $i + 1
         $prepend = "($curr/$length)"
@@ -202,11 +203,12 @@ function Get-Repo($url, $suites, $components, $output = ".\output", $cooldown, $
             $filename = $namesList[$i] + "-" + $versList[$i] + ".deb"
         }
         $filename = Remove-InvalidFileNameChars $filename -Replacement "_"
+        if ($skipDownloaded -and (Test-Path (Join-Path $output $namesList[$i] $filename))) {
+            Write-Verbose ("Skipping downloaded package {0}" -f $filename)
+            continue
+        }
 
         try {
-            if ($skipDownloaded -and (Test-Path (Join-Path $output $namesList[$i] $filename))) {
-                throw 'Pass -skipDownloaded:$false to prevent skipping downloaded packages.'
-            }
             if ($tagsList[$i] -Match "cydia::commercial") {
                 if (![string]::IsNullOrWhiteSpace($auth)) {
                     if ($purchased -contains $namesList[$i]) {

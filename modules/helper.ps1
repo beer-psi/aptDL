@@ -37,6 +37,26 @@ function Resolve-PathForced {
     return $FileName
 }
 
+function Resolve-SileoQueryString {
+    param (
+        [Parameter(Position=0, Mandatory)]
+        [string]$url
+    )
+    $iqs = $url.IndexOf("?")
+    if ($iqs -lt $url.Length - 1) {
+        $querystring = $url.Substring($iqs + 1)
+    }
+    else {
+        $querystring = ""
+    }
+    $query = [System.Web.HttpUtility]::ParseQueryString($querystring)
+    $output = @{
+        token = $query.GetValues("token")
+        payment_secret = $query.GetValues("payment_secret")
+    }
+    return $output
+}
+
 function Write-Color {
     param (
         [string][Parameter(Mandatory=$true, Position=0)]$str,
@@ -55,7 +75,7 @@ function Write-Color {
 
 function Format-Url {
     param (
-        [string][Parameter(Mandatory=$true)]$url
+        [string][Parameter(Mandatory=$true, Position=0)]$url
     )
     if (!($url.StartsWith("http://") -or $url.StartsWith("https://"))){
         $url = 'https://' + $url
