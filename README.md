@@ -50,7 +50,12 @@ Then, run the `get_token.ps1` script and fill in the information. After that, a 
 
 Once you've finished, just call the download script with `-auth authentication.json`. Reminder that each authentication will only work with one repo.
 
-### Method 2: Manually making cURL requests to the API
+### Method 2: Helper script
+Use the extension cookies.txt to dump cookies of the repo's website, then run `get_token/Get-TokenNoSileo.ps1` and fill in the required information. Change where it saves the json with the flag `-output <LOCATION>`.
+
+Tested to work on Chariz, Packix and Twickd by default. Other repos may need more work, as detailed [here.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol#exceptions)
+
+### Method 3: Manually making cURL requests to the API
 [Refer to this wiki page to get the token.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
 
 After you finish, build `authentication.json` [according to the example.](#example-authenticationjson)
