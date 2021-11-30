@@ -25,11 +25,12 @@ Optional arguments:
   -skipDownloaded: skip packages that are already downloaded.
 ```
 
-# Paid packages with the Payment Providers API
+# Paid packages
+## Payment Providers API
 Edit authentication.json with your own details, then invoke the script with `-auth .\authentication.json`
 
 ### Example authentication.json
-```
+```json
 {
     "token": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2",
     "udid": "4e1243bd22c66e76c2ba9eddc1f91394e57f9f83",
@@ -38,7 +39,7 @@ Edit authentication.json with your own details, then invoke the script with `-au
 ```
 
 You can name `authentication.json` whatever you like, as long as it is a valid JSON with the token, udid and device (like the example above.)
-## Building authentication.json
+### Building authentication.json
 ### Method 1: Capture the callback URL (works on any repo with the Payment Providers API implemented)
 Register the sileo:// protocol and point it to `get_token.exe` (Windows) or `get_token.ps1` (Linux).
 - [Registering a URL protocol on Windows](https://stackoverflow.com/questions/80650/how-do-i-register-a-custom-url-protocol-in-windows)
@@ -53,7 +54,21 @@ Once you've finished, just call the download script with `-auth authentication.j
 [Refer to this wiki page to get the token.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
 
 After you finish, build `authentication.json` [according to the example.](#example-authenticationjson)
+## Old repos without the API (BigBoss etc.)
+Modify `modules/download.ps1` with your own information from line 44 to line 46.
+
+Diff patch:
+```diff
+44,46c44,46
+<         $wreq.headers.add('X-Machine', 'iPhone10,5')
+<         $wreq.headers.add('X-Unique-ID', '0000000000000000000000000000000000000000')
+<         $wreq.headers.add('X-Firmware', '14.8')
+---
+>         $wreq.headers.add('X-Machine', 'YOUR_DEVICE_IDENTIFIER')
+>         $wreq.headers.add('X-Unique-ID', 'YOUR_DEVICE_UDID')
+>         $wreq.headers.add('X-Firmware', 'YOUR_DEVICE_VERSION')
+```
 
 # TODO
 - [x] Support for dist repos
-- [ ] Input file
+- [x] Input file
