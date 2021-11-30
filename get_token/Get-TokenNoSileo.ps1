@@ -11,6 +11,8 @@
     Your device's identifier (e.g. iPhone10,5)
 .PARAMETER cookies
     Location of dumped cookies.txt
+.PARAMETER skip
+    Skip warnings about further actions required
 .PARAMETER curl
     Location of curl
 .PARAMETER grep
@@ -39,6 +41,8 @@ param (
     [Parameter(Position=4,
         HelpMessage="Where to write thze authentication file")]
     [string]$output = "authentication.json",
+    
+    [switch]$skip,
 
     [string]$curl = (Get-Command curl).Source,
 
@@ -53,8 +57,8 @@ $cookies = Resolve-Path $cookies -ErrorAction Stop
 $callback = ""
 
 $weird_repos = @("https://repo.dynastic.co/")
-if ($weird_repos -contains $url){
-    throw "This repo needs further action. Refer to the wiki:`nhttps://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol"
+if (!$skip -and ($weird_repos -contains $url)){
+    throw "This repo needs further action. Refer to the wiki:`nhttps://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol`nTo avoid this warning, pass the flag -skip"
 }
 
 switch ($url) {
