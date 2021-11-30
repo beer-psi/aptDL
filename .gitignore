@@ -8,6 +8,7 @@ Release
 
 # I do not want my token showed to the whole world ok
 auth*
+*.json
 
 # 7zip
 7za.*
