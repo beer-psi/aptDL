@@ -28,7 +28,7 @@ Optional arguments:
 # Paid packages with the Payment Providers API
 Edit authentication.json with your own details, then invoke the script with `-auth .\authentication.json`
 
-Example `authentication.json`:
+### Example authentication.json
 ```
 {
     "token": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2",
@@ -52,7 +52,7 @@ Once you've finished, just call the download script with `-auth authentication.j
 ### Method 2: Manually making cURL requests to the API
 [Refer to this wiki page to get the token.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
 
-After you finish, build `authentication.json` [according to the example.](#building-authenticationjson)
+After you finish, build `authentication.json` [according to the example.](#example-authenticationjson)
 
 # TODO
 - [x] Support for dist repos
