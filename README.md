@@ -26,7 +26,7 @@ Optional arguments:
 ```
 
 # Paid packages with the Payment Providers API
-Edit the accompanied authentication.json with your own details, then invoke the script with `-auth .\authentication.json`
+Edit authentication.json with your own details, then invoke the script with `-auth .\authentication.json`
 
 Example `authentication.json`:
 ```
@@ -36,6 +36,8 @@ Example `authentication.json`:
     "device": "iPhone7,2"
 }
 ```
+
+You can name `authentication.json` whatever you like, as long as it is a valid JSON with the token, udid and device (like the example above.)
 ## Building authentication.json
 ### Method 1: Capture the callback URL (works on any repo with the Payment Providers API implemented)
 Register the sileo:// protocol and point it to `get_token.exe` (Windows) or `get_token.ps1` (Linux).
@@ -48,7 +50,9 @@ Then, run the `get_token.ps1` script and fill in the information. After that, a 
 Once you've finished, just call the download script with `-auth authentication.json`. Reminder that each authentication will only work with one repo.
 
 ### Method 2: Manually making cURL requests to the API
-[Refer to this wiki page.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
+[Refer to this wiki page to get the token.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
+
+After you finish, build `authentication.json` according to the example.
 
 # TODO
 - [x] Support for dist repos
