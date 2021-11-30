@@ -27,7 +27,7 @@ Optional arguments:
 
 # Paid packages
 ## Payment Providers API
-Edit authentication.json with your own details, then invoke the script with `-auth .\authentication.json`
+Edit authentication.json with your own details, then invoke the script with `-auth .\authentication.json`. If you have passed the right token but the repo isn't authorizing downloads, you may need to also [change the headers.](#old-repos-without-the-api-bigboss-etc)
 
 ### Example authentication.json
 ```json
@@ -40,39 +40,48 @@ Edit authentication.json with your own details, then invoke the script with `-au
 
 You can name `authentication.json` whatever you like, as long as it is a valid JSON with the token, udid and device (like the example above.)
 ### Building authentication.json
-### Method 1: Capture the callback URL (works on any repo with the Payment Providers API implemented)
-Register the sileo:// protocol and point it to `get_token.exe` (Windows) or `get_token.ps1` (Linux).
-- [Registering a URL protocol on Windows](https://stackoverflow.com/questions/80650/how-do-i-register-a-custom-url-protocol-in-windows)
-- [Registering a URL protocol on Linux](https://unix.stackexchange.com/questions/497146/create-a-custom-url-protocol-handler)
-- I've never really used macOS so I don't know how to register a URL protocol there /shrug
+<details>
+  <summary>Method 1: Capture the callback URL (works on any repo with the Payment Providers API implemented)</summary>
 
-Then, run the `get_token.ps1` script and fill in the information. After that, a browser window will open, allowing you to login with your repo. After you've linked your "device" with the repo, a console app will appear showing your token. Verify that the token showed matches the one in `authentication.json`.
+  Register the sileo:// protocol and point it to `get_token.exe` (Windows) or `get_token.ps1` (Linux).
+  - [Registering a URL protocol on Windows](https://stackoverflow.com/questions/80650/how-do-i-register-a-custom-url-protocol-in-windows)
+  - [Registering a URL protocol on Linux](https://unix.stackexchange.com/questions/497146/create-a-custom-url-protocol-handler)
+  - I've never really used macOS so I don't know how to register a URL protocol there /shrug
 
-Once you've finished, just call the download script with `-auth authentication.json`. Reminder that each authentication will only work with one repo.
+  Then, run the `get_token.ps1` script and fill in the information. After that, a browser window will open, allowing you to login with your repo. After you've linked your "device" with the repo, a console app will appear showing your token. Verify that the token showed matches the one in `authentication.json`.
 
-### Method 2: Helper script
-- Use the extension cookies.txt to dump cookies of the repo's website
-- Run `get_token/Get-TokenNoSileo.ps1` and fill in the required information. You can change where it saves the json with the flag `-output <LOCATION>`.
+  Once you've finished, just call the download script with `-auth authentication.json`. Reminder that each authentication will only work with one repo.
+</details>
 
-Tested to work on Chariz, Packix and Twickd by default. Other repos may need more work, as detailed [here.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol#exceptions)
+<details>
+  <summary>Method 2: Helper script (if you can't register sileo:// for method 1)</summary>
 
-### Method 3: Manually making cURL requests to the API
-[Refer to this wiki page to get the token.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
+  - Use the extension cookies.txt to dump cookies of the repo's website
+  - Run `get_token/Get-TokenNoSileo.ps1` and fill in the required information. You can change where it saves the json with the flag `-output <LOCATION>`.
 
-After you finish, build `authentication.json` [according to the example.](#example-authenticationjson)
+  Tested to work on Chariz, Packix and Twickd by default. Other repos may need more work, as detailed [here.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol#exceptions)
+</details>
+
+<details>
+  <summary>Method 3: Manually requesting the API for the token</summary>
+
+  [Refer to this wiki page to get the token.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
+
+  After you finish, build `authentication.json` [according to the example.](#example-authenticationjson)
+</details>
+
 ## Old repos without the API (BigBoss etc.)
-Modify `modules/download.ps1` with your own information from line 44 to line 46.
-
-Diff patch:
-```diff
-44,46c44,46
-<         $wreq.headers.add('X-Machine', 'iPhone10,5')
-<         $wreq.headers.add('X-Unique-ID', '0000000000000000000000000000000000000000')
-<         $wreq.headers.add('X-Firmware', '14.8')
----
->         $wreq.headers.add('X-Machine', 'YOUR_DEVICE_IDENTIFIER')
->         $wreq.headers.add('X-Unique-ID', 'YOUR_DEVICE_UDID')
->         $wreq.headers.add('X-Firmware', 'YOUR_DEVICE_VERSION')
+Edit `modules/download.ps1`, function Get-Headers with your own information:
+```powershell
+function Get-Header {
+    $headers = @{
+        "X-Machine" = "YOUR_DEVICE_IDENTIFIER"
+        "X-Unique-ID" = "YOUR_DEVICE_UDID"
+        "X-Firmware" = "YOUR_DEVICE_VERSION"
+        "User-Agent" = "Sileo/2.2.6 CoreFoundation/1775.118 Darwin/20.4.0"
+    }
+    return $headers
+}
 ```
 
 # TODO

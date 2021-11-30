@@ -1,13 +1,3 @@
-function Get-Header {
-    $headers = @{
-        "X-Machine" = "iPhone10,5"
-        "X-Unique-ID" = "0000000000000000000000000000000000000000"
-        "X-Firmware" = "14.8"
-        "User-Agent" = "Telesphoreo APT-HTTP/1.0.999"
-    }
-    return $headers
-}
-
 function Remove-InvalidFileNameChars {
     param(
         [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]

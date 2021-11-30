@@ -1,5 +1,12 @@
-function Get-UserAgent {
-    return "Telesphoreo APT-HTTP/1.0.999"
+function Get-Header {
+    $headers = @{
+        # You should modify these to a link device's information if downloads fail
+        "X-Machine" = "iPhone10,5" # Device identifier (e.g. iPhone10,5)
+        "X-Unique-ID" = "0000000000000000000000000000000000000000" # Device UDID
+        "X-Firmware" = "14.8" # Device version
+        "User-Agent" = "Sileo/2.2.6 CoreFoundation/1775.118 Darwin/20.4.0"
+    }
+    return $headers
 }
 
 function strip_filename($path) { $path -replace [regex]::escape((fname $path)) }
@@ -36,19 +43,17 @@ function url_remote_filename($url) {
     return $basename
 }
 
-function dl($url, $to, $cookies, $progress, $prepend = "") {
+function dl([string]$url, [string]$to, [string]$cookies, [string]$progress, [string]$prepend = "") {
     $reqUrl = ($url -split "#")[0]
     $wreq = [net.webrequest]::create($reqUrl)
     if($wreq -is [net.httpwebrequest]) {
-        $wreq.useragent = Get-UserAgent
-        $wreq.headers.add('X-Machine', 'iPhone10,5')
-        $wreq.headers.add('X-Unique-ID', '0000000000000000000000000000000000000000')
-        $wreq.headers.add('X-Firmware', '14.8')
+        $headers = Get-Header
+        $wreq.useragent = $headers["User-Agent"]
+        $wreq.headers.add('X-Machine', $headers["X-Machine"])
+        $wreq.headers.add('X-Unique-ID', $headers["X-Unique-ID"])
+        $wreq.headers.add('X-Firmware', $headers["X-Firmware"])
         if (-not ($url -imatch "sourceforge\.net" -or $url -imatch "portableapps\.com")) {
             $wreq.referer = strip_filename $url
-        }
-        if($cookies) {
-            $wreq.headers.add('Cookie', (cookie_header $cookies))
         }
     }
 
