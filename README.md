@@ -29,14 +29,17 @@ Optional arguments:
 ## Payment Providers API
 Edit authentication.json with your own details, then invoke the script with `-auth .\authentication.json`. If you have passed the right token but the repo isn't authorizing downloads, you may need to also [change the headers.](#old-repos-without-the-api-bigboss-etc)
 
-### Example authentication.json
-```json
-{
-    "token": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2",
-    "udid": "4e1243bd22c66e76c2ba9eddc1f91394e57f9f83",
-    "device": "iPhone7,2"
-}
-```
+<details>
+  <summary>Example authentication.json</summary>
+
+  ```json
+  {
+      "token": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2",
+      "udid": "4e1243bd22c66e76c2ba9eddc1f91394e57f9f83",
+      "device": "iPhone7,2"
+  }
+  ```
+</details>
 
 You can name `authentication.json` whatever you like, as long as it is a valid JSON with the token, udid and device (like the example above.)
 ### Building authentication.json
