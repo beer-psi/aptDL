@@ -52,7 +52,7 @@ Once you've finished, just call the download script with `-auth authentication.j
 ### Method 2: Manually making cURL requests to the API
 [Refer to this wiki page to get the token.](https://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol)
 
-After you finish, build `authentication.json` according to the example.
+After you finish, build `authentication.json` [according to the example.](#building-authenticationjson)
 
 # TODO
 - [x] Support for dist repos
