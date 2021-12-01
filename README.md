@@ -1,5 +1,5 @@
 # aptDL
-Downloads Cydia repositories (paid packages not included)
+A PowerShell Core script to download Cydia repos.
 
 ~~Dist repos are also not supported for now.~~ Dist repos are now working! (mostly)
 
