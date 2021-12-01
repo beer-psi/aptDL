@@ -1,6 +1,6 @@
 function Get-Header {
     $headers = @{
-        # You should modify these to a link device's information if downloads fail
+        # You should modify these to a linked device's information if downloads for paid packages fail
         "X-Machine" = "iPhone10,5" # Device identifier (e.g. iPhone10,5)
         "X-Unique-ID" = "0000000000000000000000000000000000000000" # Device UDID
         "X-Firmware" = "14.8" # Device version
