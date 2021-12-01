@@ -32,9 +32,6 @@
 .PARAMETER dlpackage
     Packages to download specifically. Separate multiple packages with a comma.
     Any package not in this list will be removed.
-.PARAMETER 7z
-    Manually specify the path to the 7z executable
-    Default value: output of (Get-Command 7z).Source
 .EXAMPLE
     .\main.ps1 -url https://apt.procurs.us `
                -suites iphoneos-arm64/1700 `
@@ -48,7 +45,7 @@
     Author: beerpsi/extradummythicc
     Portions of the code was taken from Scoop (https://github.com/ScoopInstaller/Scoop/)
 #>
-#requires -version 5
+#requires -version 6
 [cmdletbinding()]
 param (
     [Parameter(ParameterSetName="help", Mandatory)]
@@ -76,11 +73,6 @@ param (
     [Parameter(ParameterSetName="url")]
     [alias('af')]
     [string]$auth,
-
-    [Parameter(ParameterSetName="url")]
-    [Parameter(ParameterSetName="input")]
-    [alias('7zf', '7zc')]
-    [string]$7z = (Get-Command 7z).Source,
 
     [Parameter(ParameterSetName="url")]
     [alias('p')]
@@ -121,40 +113,30 @@ else {
     $original = $false
 }
 
-if ($null -eq $7z) {
-    switch ($PSVersionTable.Platform) {
-        "Win32NT" {
-            $files = @("$PSScriptRoot\7za.exe", "$PSScriptRoot\7za.dll", "$PSScriptRoot\7zxa.dll")
-            foreach ($file in $files){
-                if (-not (Test-Path $file)){
-                    throw "Could not find required 7zip files. Download from https://www.7-zip.org/a/7z1900-extra.7z and put them in the script's directory"
-                    exit
-                }
-            }
-            $7z = "$PSScriptRoot\7za.exe"
-        }
-        "Unix" {
-           throw "7z is either not installed, or not available in PATH. Install it from your package manager.`nIf you know where the 7z executable is, use the -7z flag to specify its location."
-           exit
-        }
-    }
-}
-
 if ($PSBoundParameters.ContainsKey('inputfile')) {
     Write-Color "==> Reading input file" -color Blue
     $tasks = Format-InputData (Import-PowerShellDataFile $inputfile)
     foreach ($task in $tasks.All) {
-        Write-Color ("==> " + $task.url) -color Blue
+        Write-Color ("==> " + $task.repo.url) -color Blue
         try {
-            Write-Output $ta
-            Get-Repo $task.url $task.suites $task.components $task.output $task.cooldown $7z $task.original $task.auth $task.skipDownloaded $task.dlpackage
+            Get-Repo $task.repo $task.output $task.cooldown $task.original $task.auth $task.skipDownloaded $task.dlpackage
         }
         catch {
-            Write-Color ("==> Unhandled exception: {0}" -f $Error[0].Exception.Message) -color Red
+            Write-Error ("==> Unhandled exception: {0}" -f $Error[0].Exception.Message)
             continue
         }
     }
 }
 else {
-    Get-Repo $url $suites $components $output $cooldown $7z $original $auth $skipDownloaded $dlpackage 
+    $repo = @{
+        url = $url
+        suites = $suites
+        components = $components
+    }
+    try {
+        Get-Repo $repo $output $cooldown $original $auth $skipDownloaded $dlpackage 
+    }
+    catch {
+        Write-Error ("==> Unhandled exception: {0}" -f $Error[0].Exception.Message)
+    }
 }
