@@ -58,7 +58,7 @@ $callback = ""
 
 $weird_repos = @("https://repo.dynastic.co/")
 if (!$skip -and ($weird_repos -contains $url)){
-    throw "This repo needs further action. Refer to the wiki:`nhttps://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol`nTo avoid this warning, pass the flag -skip"
+    Write-Warning "This repo needs further action. Refer to the wiki:`nhttps://github.com/extradummythicc/aptDL/wiki/Custom-workarounds-to-get-the-token-if-you-cannot-register-the-Sileo-URL-protocol`nTo avoid this warning, pass the flag -skip"
 }
 
 switch ($url) {
@@ -67,7 +67,7 @@ switch ($url) {
         break
     } 
     default {
-        $callback = & $curl -v -A (Get-UserAgent) -b $cookies "$endpoint/authenticate?udid=$udid&model=$model" 2>&1
+        $callback = & $curl -v -A (Get-Header)["User-Agent"] -b $cookies "$endpoint/authenticate?udid=$udid&model=$model" 2>&1
         break
     }
 }
