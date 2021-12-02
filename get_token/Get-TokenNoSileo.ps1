@@ -41,7 +41,7 @@ param (
     [Parameter(Position=4,
         HelpMessage="Where to write thze authentication file")]
     [string]$output = "authentication.json",
-    
+
     [switch]$skip,
 
     [string]$curl = (Get-Command curl).Source,
@@ -50,7 +50,7 @@ param (
 )
 . "$PSScriptRoot\..\modules\download.ps1"
 . "$PSScriptRoot\..\modules\helper.ps1"
-. "$PSScriptRoot\..\modules\repo.ps1"
+
 $url = Format-Url $url
 $endpoint = (Get-PaymentEndpoint $url).TrimEnd('/')
 $cookies = Resolve-Path $cookies -ErrorAction Stop
@@ -65,13 +65,13 @@ switch ($url) {
     "https://repo.chariz.com/" {
         $callback = curl -X POST -b $cookies -d "udid=$udid" -d "model=$model" "https://chariz.com/api/sileo/authenticate?udid=$udid&model=$model"
         break
-    } 
+    }
     default {
         $callback = & $curl -v -A (Get-Header)["User-Agent"] -b $cookies "$endpoint/authenticate?udid=$udid&model=$model" 2>&1
         break
     }
 }
-$callback = $callback | grep -Eo -m 1 "sileo:\/\/[a-zA-Z0-9.\/?=_%:|&;-]*"
+$callback = $callback | & $grep -Eo -m 1 "sileo:\/\/[a-zA-Z0-9.\/?=_%:|&;-]*"
 $sileoqs = Resolve-SileoQueryString $callback
 
 $authentication = @{
