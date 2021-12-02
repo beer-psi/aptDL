@@ -5,7 +5,6 @@ param (
 )
 Add-Type -AssemblyName System.Web
 
-
 Function Get-PSScriptPath {
     if ([System.IO.Path]::GetExtension($PSCommandPath) -eq '.ps1') {
         $psScriptPath = $PSCommandPath
@@ -17,24 +16,13 @@ Function Get-PSScriptPath {
 }
 $PSScriptPath = Get-PSScriptPath
 . "$PSScriptPath\..\modules\helper.ps1"
-. "$PSScriptPath\..\modules\repo.ps1"
+. "$PSScriptPath\..\modules\repo\debian.ps1"
 
 if ($PSBoundParameters.ContainsKey('url')) {
-    $iqs = $url.IndexOf("?")
-    if ($iqs -lt $url.Length - 1) {
-        $querystring = $url.Substring($iqs + 1)
-    }
-    else {
-        $querystring = ""
-    }
-    $query = [System.Web.HttpUtility]::ParseQueryString($querystring)
-
-    $output = @{}
-    $output.token = $query["token"]
-    $output.payment_secret = $query["payment_secret"]
+    $output = Resolve-SileoQueryString $url
 
     Write-Output (ConvertTo-Json $output)
-    
+
     $authentication = @{}
     (Get-Content $PSScriptPath\..\authentication.json | ConvertFrom-Json).psobject.properties | ForEach-Object { $authentication[$_.Name] = $_.Value }
     $authentication.token = $output.token

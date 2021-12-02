@@ -1,0 +1,10 @@
+{
+    "files.trimTrailingWhitespace": true,
+
+    "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
+    "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
+    "powershell.codeFormatting.useConstantStrings": true,
+    "powershell.codeFormatting.whitespaceBetweenParameters": true,
+    "powershell.powerShellDefaultVersion": "Core",
+    "powershell.scriptAnalysis.settingsPath": ".vscode/PSScriptAnalyzerSettings.psd1"
+}

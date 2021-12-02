@@ -9,7 +9,7 @@
             repo = @{
                 url = "https://apt.procurs.us" # Repo URL
                 suites = "iphoneos-arm64/1700" # Dist repo's suites
-                components = "main" # Actually does pretty much nothing at all 
+                components = "main" # Actually does pretty much nothing at all
             }
             output = "..\..\repo\procursus\iphoneos-arm64\1700" # Output directory, relative to main.ps1's root
             cooldown = 3 # Seconds of cooldown in-between downloads
@@ -23,7 +23,7 @@
                 suites = ""
                 components = ""
             }
-            output = "..\..\repo\chariz"
+            output = "E:\Documents\repo\chariz"
             cooldown = 3
             original = $false
             auth = "authentication\chariz.json"
