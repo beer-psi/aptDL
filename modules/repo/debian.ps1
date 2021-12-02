@@ -19,6 +19,7 @@ function Get-DistUrl {
         [Parameter(Position=0, Mandatory=$true)]
         [hashtable]$repo
     )
+    $repo.url = Format-Url $repo.url
     if ($repo.ContainsKey('suites') -and ![string]::IsNullOrWhiteSpace($repo.suites) -and $repo.suites -ne "./") {
         $disturl = Format-Url -url ($repo.url + 'dists/' + $repo.suites)
     }
@@ -26,6 +27,38 @@ function Get-DistUrl {
         $disturl = $repo.url
     }
     return $disturl
+}
+
+function ConvertFrom-DebControl {
+    param (
+        [Parameter(Position=0, Mandatory)]
+        [string]$pkgfs
+    )
+    $pkgfs = Resolve-Path $pkgfs
+    Write-Verbose "Processing $pkgfs"
+    #ConvertTo-Unix $pkgf # Sanitize stuff, who knows, maybe some bozo is hosting their apt repo on Windows
+
+    $pkgc = [System.Collections.ArrayList]@() # pkgcontent
+    $pkgf = [regex]::Split((Get-Content -Raw $pkgfs), '(\n){2}', [Text.RegularExpressions.RegexOptions]::ExplicitCapture) # pkgfile
+    $length = $pkgf.Length
+    for ($i = 0; $i -lt $length; $i++) {
+        [void]$pkgc.Add(@{})
+        $lastFieldName = ""
+        $pkgp = $pkgf[$i] -split '\n' #pkgparagraph
+        for ($j = 0; $j -lt $pkgp.Length; $j++) {
+            if ($pkgp[$j].StartsWith('#')) {continue}
+
+            $pkgl = $pkgp[$j] -split ':\s?',2 #pkgline
+            if ($pkgp[$j] -match '^\s+') {
+                $pkgc[$i][$lastFieldName] += (($pkgp[$j] -replace '^\s+') + "`n")
+            }
+            else {
+                $pkgc[$i][$pkgl[0]] = $pkgl[1] -replace '^\s*'
+                $lastFieldName = $pkgl[0]
+            }
+        }
+    }
+    return $pkgc
 }
 
 <#
@@ -61,25 +94,27 @@ function Get-DebRepoPackage {
 
     Remove-Item Release -ErrorAction SilentlyContinue
     try {
-        Invoke-WebRequest -UseBasicParsing ($disturl + 'Release') -OutFile Release -ErrorAction SilentlyContinue
+        Invoke-WebRequest -UseBasicParsing ($disturl + 'Release') -OutFile Release -ErrorAction SilentlyContinue -Headers (Get-Header)
     }
     catch {
         throw ($disturl + " doesn't seem like a valid repo?!")
     }
 
-    $parse = $false
     $filelist = @()
     if ($repo.url -eq "http://apt.thebigboss.org/repofiles/cydia") { # Fucking BigBoss man
         $filelist += "main/binary-iphoneos-arm/Packages.bz2"
     }
     else {
-        Get-Content Release | ForEach-Object {
-            if ($_ -Match "(MD5Sum)|(SHA1)|(SHA256)|(SHA512)") {$parse = $true}
-            if ($parse -and !($_.StartsWith(" "))) {$parse = $false}
-            if (!$parse -and $_.StartsWith(" ")) {$filelist += $_ -replace "^ ", ""}
+        $rlsc = (ConvertFrom-DebControl Release)
+        $checksums = @("MD5Sum", "SHA1", "SHA256", "SHA512")
+        foreach ($checksum in $checksums) {
+            if (!$rlsc.ContainsKey($checksum)) {
+                continue
+            }
+            $filelist = $rlsc[$checksum] -split '\n' | ForEach-Object {($_ -split '\s+' -ne "Release")[2]} | Select-Object -Unique | Select-String -Pattern "Packages" -Raw
+            break
         }
-        $filelist = $filelist | ForEach-Object {($_ -split '\s+' -ne "Release")[2]}
-        $filelist = $filelist | Select-Object -Unique | Select-String -Pattern "Packages" -Raw
+
         if (!$7z.zstd) {
             $filelist = $filelist | Select-String -Pattern "zst" -NotMatch -Raw
         }
@@ -141,23 +176,13 @@ function ConvertFrom-DebPackage {
         [Parameter(Mandatory, Position=0)]
         [string]$pkgf
     )
-    $count = 0
-    $lastLineWasNotWhitespace = $true #Hacky hack to handle paragraphs that were separated by multiple newlines
-    $output = @{
-        namesList = [System.Collections.ArrayList]@()
-        linksList = [System.Collections.ArrayList]@()
-        versList = [System.Collections.ArrayList]@()
-        tagsList = [System.Collections.ArrayList]@()
+    $pkgc = ConvertFrom-DebControl $pkgf
+    return @{
+        namesList = $pkgc.Package
+        linksList = $pkgc.Filename
+        versList = $pkgc.Version
+        tagsList = $pkgc.Tag
     }
-    Get-Content $pkgf | ForEach-Object {
-        if (![string]::IsNullOrWhiteSpace($_) -and !$lastLineWasNotWhitespace) {$lastLineWasNotWhitespace = $true}
-        if ([string]::IsNullOrWhiteSpace($_) -and $lastLineWasNotWhitespace) {$count++; $lastLineWasNotWhitespace = $false}
-        if ($_.StartsWith("Package: ")) {$output.namesList.Add($_ -replace '^Package: '); $output.tagsList.Add("")}
-        if ($_.StartsWith("Version: ")) {$output.versList.Add($_ -replace '^Version: ')}
-        if ($_.StartsWith("Filename: ")) {$output.linksList.Add($_ -replace '^Filename: ')}
-        if ($_.StartsWith("Tag: ")) {$output.tagsList[$count] = $_ -replace '^Tag: '}
-    }
-    return $output
 }
 
 <#
@@ -180,9 +205,15 @@ function Get-PaymentEndpoint {
         [Parameter(Mandatory=$true, Position=0)]
         [Hashtable]$repo
     )
-    $endpoint = (Invoke-WebRequest -UseBasicParsing ($repo.url + 'payment_endpoint')).Content
-    if ($endpoint -is "Byte[]") {
-        $endpoint = [System.Text.Encoding]::UTF8.GetString($endpoint) -replace "`t|`n|`r",""
+    $repo.url = Format-Url $repo.url
+    try {
+        $endpoint = (Invoke-WebRequest -UseBasicParsing ($repo.url + 'payment_endpoint')).Content
+        if ($endpoint -is "Byte[]") {
+            $endpoint = [System.Text.Encoding]::UTF8.GetString($endpoint) -replace "`t|`n|`r",""
+        }
+    }
+    catch {
+        $endpoint = $null
     }
     return $endpoint
 }
