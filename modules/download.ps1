@@ -88,7 +88,7 @@ function dl([string]$url, [string]$to, [string]$cookies, [string]$progress, [str
             $newUrl = "$newUrl#/$postfix"
         }
 
-        dl $newUrl $to $cookies $progress
+        dl $newUrl $to $cookies $progress $prepend
         return
     }
 
