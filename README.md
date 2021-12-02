@@ -5,24 +5,25 @@ A PowerShell Core script to download Cydia repos.
 
 # Usage
 ```
-.\main.ps1 <-s REPO_URL> <-cr | -co> [-help] [-suites DIST_SUITES] [-p PACKAGE] [-o OUTPUT_DIR] [-cd COOLDOWN_SECONDS] [-auth AUTHENTICATION_JSON] [-7z PATH] [-skipDownloaded]
+❯ Get-Help ./main.ps1
+NAME
+    E:\Documents\git\aptDL\main.ps1
+SYNOPSIS
+    aptDL - a tool to download apt (mostly Cydia) repos
+SYNTAX
+    E:\Documents\git\aptDL\main.ps1 -help [<CommonParameters>]
 
-Required arguments:
-  -s: Repo to download
-  -cr: Rename downloaded files to PACKAGENAME-VERSION.deb
-  -co: Don't rename downloaded files
--cr and -co are mutually exclusive.
-  
-Optional arguments:
-  -help: Prints a detailed help message
-  -suites: Specify the suite you want to download from, required for dist repos. 
-  -p: Specify package to download, if omitted download all packages.
-  -o: Output directory (relative to the script's directory, default is .\output)
-  -cd: Time to wait between downloads (default 5 seconds, so as not to hit rate limit)
-  -auth: Location of JSON file containing authentication (token, udid and device), which will be sent when downloading paid packages 
-         Refer to https://developer.getsileo.app/payment-providers at the Downloads section.
-  -7z: Manually specify the path to 7z executable, in case the script can't find it itself.
-  -skipDownloaded: skip packages that are already downloaded.
+    E:\Documents\git\aptDL\main.ps1 [-inputfile] <String> [<CommonParameters>]
+
+    E:\Documents\git\aptDL\main.ps1 [-url] <String> [[-suites] <String>] [[-components] <String>] [-output <String>] [-auth <String>] [-dlpackage
+    <String[]>] [-cooldown <Double>] [-original] [-formatted] [-skipDownloaded] [<CommonParameters>]
+DESCRIPTION
+    Downloads sources and/or dist repos for archival purposes.
+REMARKS
+    To see the examples, type: "Get-Help E:\Documents\git\aptDL\main.ps1 -Examples"
+    For more information, type: "Get-Help E:\Documents\git\aptDL\main.ps1 -Detailed"
+    For technical information, type: "Get-Help E:\Documents\git\aptDL\main.ps1 -Full"
+
 ```
 
 # Paid packages
