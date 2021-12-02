@@ -4,7 +4,7 @@ function Get-RepoPackage {
         [hashtable]$repo
     )
     if ($repo.installer) {
-        Write-Host "==> Attempting to download Packages.xml (Installer repo)"
+        Write-Host "==> Attempting to download Packages.xml (Installer repo)" -ForegroundColor Blue
         Get-InstallerRepoPackage $repo
     }
     else {
@@ -101,7 +101,7 @@ function Get-Repo($repo, $output = ".\output", $cooldown, $original = $false, $a
         }
 
         try {
-            if ($pkgc.tagsList[$i] -Match "cydia::commercial") {
+            if ($pkgc.tagsList -and ($pkgc.tagsList[$i] -Match "cydia::commercial")) {
                 if ($authinfo.authstatus) {
                     if ($authinfo.purchased -contains $pkgc.namesList[$i]) {
                         $authinfo.authtable.version = $pkgc.versList[$i]
