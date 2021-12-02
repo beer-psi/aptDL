@@ -1,6 +1,6 @@
-function Remove-InvalidFileNameChars {
+function Rename-InvalidFileNameChar {
     param(
-        [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory=$true,Position=0)]
         [String[]]$Name,
 
         [Parameter(Position=1)]
@@ -106,14 +106,14 @@ function Get-7zExec {
                 $files = @("$PSScriptRoot\..\7za.exe", "$PSScriptRoot\..\7za.dll", "$PSScriptRoot\..\7zxa.dll")
                 foreach ($file in $files){
                     if (-not (Test-Path $file)){
-                        throw "Could not find required 7zip files. Download from https://www.7-zip.org/a/7z1900-extra.7z and put them in the script's directory"
+                        throw "Could not find required 7zip files. Download from https://www.7-zip.org/a/7z1900-extra.7z and put them in the script's directory`nIf you already have 7zip installed, add it to your PATH."
                         exit
                     }
                 }
                 $7z = (Resolve-Path "$PSScriptRoot\..\7za.exe")
             }
             "Unix" {
-               throw "7z is either not installed, or not available in PATH. Install it from your package manager.`nIf you know where the 7z executable is, use the -7z flag to specify its location."
+               throw "7z is either not installed, or not available in PATH. Install it from your package manager, or add it to your PATH."
                exit
             }
         }
