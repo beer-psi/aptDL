@@ -123,3 +123,10 @@ function Get-7zExec {
         zstd = $null -ne (& $7z i | Select-String zstd)
     }
 }
+
+function ConvertTo-Unix ($path) {
+    $utf8NoBomEncoding = New-Object System.Text.UTF8Encoding($False)
+    $x = [System.IO.File]::ReadAllText($path)
+    $content = $x -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($path, $content, $utf8NoBomEncoding)
+}
