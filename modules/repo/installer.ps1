@@ -3,12 +3,13 @@ function Test-InstallerRepo {
         [Parameter(Position=0, Mandatory)]
         [Hashtable]$repo
     )
+    $repo.url = Format-Url $repo.url
     if ($repo.ContainsKey('suites') -and ![string]::IsNullOrWhiteSpace($repo.suites)) {
         return $false
     }
 
     try {
-        Invoke-WebRequest ($repo.url + 'Release') -ErrorAction SilentlyContinue > $null
+        Invoke-WebRequest ($repo.url + 'Release') -Headers (Get-Header) -ErrorAction SilentlyContinue > $null
         return $false
     }
     catch {
