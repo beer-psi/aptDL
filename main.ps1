@@ -45,7 +45,7 @@
     Author: beerpsi/extradummythicc
     Portions of the code was taken from Scoop (https://github.com/ScoopInstaller/Scoop/)
 #>
-#requires -version 6
+#requires -version 5
 [cmdletbinding()]
 param (
     [Parameter(ParameterSetName="help", Mandatory)]
@@ -101,23 +101,29 @@ if ($help -or ($null -eq $PSBoundParameters.Keys)) {
 
 . "$PSScriptRoot\modules\download.ps1"
 . "$PSScriptRoot\modules\helper.ps1"
-. "$PSScriptRoot\modules\repo.ps1"
+. "$PSScriptRoot\modules\plist.ps1"
+. "$PSScriptRoot\modules\repo\debian.ps1"
+. "$PSScriptRoot\modules\repo\installer.ps1"
+. "$PSScriptRoot\modules\repo\repo.ps1"
 
 if ($PSBoundParameters.ContainsKey('formatted')) {
     $original = !$formatted
 }
 elseif ($PSBoundParameters.ContainsKey('original')) {
-    
+
 }
 else {
     $original = $false
 }
 
+$oldpp = $ProgressPreference
+$ProgressPreference = "SilentlyContinue"
+
 if ($PSBoundParameters.ContainsKey('inputfile')) {
     Write-Color "==> Reading input file" -color Blue
     $tasks = Format-InputData (Import-PowerShellDataFile $inputfile)
     foreach ($task in $tasks.All) {
-        Write-Color ("==> " + $task.repo.url) -color Blue
+        Write-Color ("==> " + $task.repo.url) -color Green
         try {
             Get-Repo $task.repo $task.output $task.cooldown $task.original $task.auth $task.skipDownloaded $task.dlpackage
         }
@@ -134,9 +140,11 @@ else {
         components = $components
     }
     try {
-        Get-Repo $repo $output $cooldown $original $auth $skipDownloaded $dlpackage 
+        Get-Repo $repo $output $cooldown $original $auth $skipDownloaded $dlpackage
     }
     catch {
         Write-Error ("==> Unhandled exception: {0}" -f $Error[0].Exception.Message)
     }
 }
+
+$ProgressPreference = $oldpp
