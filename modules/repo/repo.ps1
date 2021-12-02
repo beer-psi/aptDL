@@ -71,7 +71,7 @@ function Get-Repo($repo, $output = ".\output", $cooldown, $original = $false, $a
     Write-Host "==> Starting downloads" -ForegroundColor Blue
     $pkgc = ConvertFrom-Package Packages
     $length =  @($pkgc.linksList).Length
-    $mentioned_nondls = [System.Collections.ArrayList]@()
+    $mentioned_nondls = [System.Collections.ArrayList]@("4d2b0bad-0021-44ed-a8e4-c50ae895dd99")
     for ($i = 0; $i -lt $length; $i++) {
         $curr = $i + 1
         $prepend = "($curr/$length)"
