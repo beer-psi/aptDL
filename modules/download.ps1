@@ -1,10 +1,13 @@
 function Get-Header {
+    $architecture = ("amd64", "i386")[[System.IntPtr]::Size -eq 4]
+    $PowerShellInfoString = "PowerShell/$($PSVersionTable.PSVersion) "
+    $PowerShellInfoString += "($($PSVersionTable.Platform); $architecture; $PSEdition)"
     $headers = @{
         # You should modify these to a linked device's information if downloads for paid packages fail
         "X-Machine" = "iPhone10,5" # Device identifier (e.g. iPhone10,5)
         "X-Unique-ID" = "0000000000000000000000000000000000000000" # Device UDID
         "X-Firmware" = "14.8" # Device version
-        "User-Agent" = "Sileo/2.2.6 CoreFoundation/1775.118 Darwin/20.4.0"
+        "User-Agent" = "aptDL/1.0 (+https://github.com/extradummythicc/aptDL) $PowerShellInfoString"
     }
     return $headers
 }
