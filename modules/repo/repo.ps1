@@ -70,30 +70,30 @@ function Get-Repo($repo, $output = ".\output", $cooldown, $original = $false, $a
 
     Write-Host "==> Starting downloads" -ForegroundColor Blue
     $pkgc = ConvertFrom-Package Packages
-    $length =  @($pkgc.linksList).Length
+    $length =  $pkgc.link.Length
     $mentioned_nondls = [System.Collections.ArrayList]@("4d2b0bad-0021-44ed-a8e4-c50ae895dd99")
     for ($i = 0; $i -lt $length; $i++) {
         $curr = $i + 1
         $prepend = "($curr/$length)"
         $requestmade = $false
 
-        if ($mentioned_nondls.Contains($pkgc.namesList[$i])) {
+        if ($mentioned_nondls.Contains($pkgc[$i].name)) {
             continue
         }
-        if ($specific_package -and !($dlpackage -contains $pkgc.namesList[$i])) {
-            Write-Verbose ("Skipping unspecified package " + $pkgc.namesList[$i])
-            [void]$mentioned_nondls.Add($pkgc.namesList[$i])
+        if ($specific_package -and !($dlpackage -contains $pkgc[$i].name)) {
+            Write-Verbose ("Skipping unspecified package " + $pkgc[$i].name)
+            [void]$mentioned_nondls.Add($pkgc[$i].name)
             continue
         }
 
         if ($original) {
-            $filename = [System.IO.Path]::GetFileName($pkgc.linksList[$i])
+            $filename = [System.IO.Path]::GetFileName($pkgc[$i].link)
         }
         else {
-            $filename = $pkgc.namesList[$i] + "-" + $pkgc.versList[$i] + [System.IO.Path]::GetExtension($pkgc.linksList[$i])
+            $filename = $pkgc[$i].name + "-" + $pkgc[$i].version + [System.IO.Path]::GetExtension($pkgc[$i].link)
         }
         $filename = Rename-InvalidFileNameChar $filename -Replacement "_"
-        $destination = Join-Path -Path $output -ChildPath $pkgc.namesList[$i] -AdditionalChildPath $filename
+        $destination = Join-Path -Path $output -ChildPath $pkgc[$i].name -AdditionalChildPath $filename
 
         if ($skipDownloaded -and (Test-Path $destination)) {
             Write-Verbose ("Skipping downloaded package {0}" -f $filename)
@@ -101,30 +101,30 @@ function Get-Repo($repo, $output = ".\output", $cooldown, $original = $false, $a
         }
 
         try {
-            if ($pkgc.tagsList -and ($pkgc.tagsList[$i] -Match "cydia::commercial")) {
+            if ($pkgc[$i].tag -and ($pkgc[$i].tag -Match "cydia::commercial")) {
                 if ($authinfo.authstatus) {
-                    if ($authinfo.purchased -contains $pkgc.namesList[$i]) {
-                        $authinfo.authtable.version = $pkgc.versList[$i]
+                    if ($authinfo.purchased -contains $pkgc[$i].name) {
+                        $authinfo.authtable.version = $pkgc[$i].version
                         $authinfo.authtable.repo = $repo.url
                         $requestmade = $true
                         $dllink = (Invoke-RestMethod -Method Post -Body $authinfo.authtable -Uri ($repo.endpoint + 'package/' + $namesList[$i] + '/authorize_download')).url
                     }
                     else {
-                        [void]$mentioned_nondls.Add($pkgc.namesList[$i])
+                        [void]$mentioned_nondls.Add($pkgc[$i].name)
                         throw "Skipping unpurchased package."
                     }
                 }
                 else {
-                    [void]$mentioned_nondls.Add($pkgc.namesList[$i])
+                    [void]$mentioned_nondls.Add($pkgc[$i].name)
                     throw 'Paid package but no authentication found.'
                 }
             }
             else {
-                $dllink = (($repo.url + $pkgc.linksList[$i]), $pkgc.linksList[$i])[$repo.installer]
+                $dllink = (($repo.url + $pkgc[$i].link), $pkgc[$i].link)[$repo.installer]
             }
 
-            if (!(Test-Path (Join-Path $output $pkgc.namesList[$i]))) {
-                mkdir (Join-Path $output $pkgc.namesList[$i]) > $null
+            if (!(Test-Path (Join-Path $output $pkgc[$i].name))) {
+                mkdir (Join-Path $output $pkgc[$i].name) > $null
             }
             Write-Verbose "Download link: $dllink"
             Write-Verbose ("Saving to: {0}" -f $destination)
@@ -135,6 +135,7 @@ function Get-Repo($repo, $output = ".\output", $cooldown, $original = $false, $a
             Write-Color ("$prepend Download for $filename failed: {0}" -f $Error[0].Exception.Message) -color Red
             if (!$requestmade) {continue}
         }
-        Start-Sleep -Seconds ([double]$cooldown)
+        # Skip cooldown for last package
+        if ($i -ne ($length - 1)) {Start-Sleep -Seconds ([double]$cooldown)}
     }
 }
