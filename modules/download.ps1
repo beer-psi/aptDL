@@ -1,7 +1,7 @@
 function Get-Header {
     $architecture = ("amd64", "i386")[[System.IntPtr]::Size -eq 4]
     $PowerShellInfoString = "PowerShell/$($PSVersionTable.PSVersion) "
-    $PowerShellInfoString += "($($PSVersionTable.Platform); $architecture; $PSEdition)"
+    $PowerShellInfoString += "($(("Windows NT", $PSVersionTable.Platform)[$PSVersionTable.ContainsKey('Platform')]); $architecture; $PSEdition)"
     $headers = @{
         # You should modify these to a linked device's information if downloads for paid packages fail
         "X-Machine" = "iPhone10,5" # Device identifier (e.g. iPhone10,5)
