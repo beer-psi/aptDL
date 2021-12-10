@@ -30,10 +30,15 @@ function ConvertFrom-InstallerPackage {
         [Parameter(Mandatory, Position=0)]
         [string]$pkgf
     )
-    $pkgxml = [xml](Get-Content $pkgf) | ConvertFrom-Plist
-    return @{
-        namesList = $pkgxml.packages.bundleIdentifier
-        linksList = $pkgxml.packages.location
-        versList = $pkgxml.packages.version
+    $output = @{
+        namesList = [System.Collections.ArrayList]@()
+        versList = [System.Collections.ArrayList]@()
+        linksList = [System.Collections.ArrayList]@()
     }
+    ([xml](Get-Content $pkgf) | ConvertFrom-Plist).packages | ForEach-Object {
+        $output.namesList.Add($_.bundleIdentifier)
+        $output.versList.Add($_.version)
+        $output.linksList.Add($_.location)
+    }
+    return $output
 }

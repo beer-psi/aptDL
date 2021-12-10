@@ -36,24 +36,32 @@ function ConvertFrom-DebControl {
     )
     $pkgfs = Resolve-Path $pkgfs
     Write-Verbose "Processing $pkgfs"
-    #ConvertTo-Unix $pkgf # Sanitize stuff, who knows, maybe some bozo is hosting their apt repo on Windows
+    ConvertTo-Unix $pkgfs # Sanitize stuff, who knows, maybe some bozo is hosting their apt repo on Windows
 
-    $pkgc = [System.Collections.ArrayList]@() # pkgcontent
-    $pkgf = [regex]::Split((Get-Content -Raw $pkgfs), '(\n){2}', [Text.RegularExpressions.RegexOptions]::ExplicitCapture) # pkgfile
+    # pkgcontent: contains content of the processed file
+    $pkgc = [System.Collections.ArrayList]@()
+
+    # pkgfile: contains content of the input file, split by paragraphs
+    $pkgf = [regex]::Split((Get-Content -Raw $pkgfs), '(\n){2,}', [Text.RegularExpressions.RegexOptions]::ExplicitCapture) | `
+                Where-Object {$_} # Removes empty items
     $length = $pkgf.Length
     for ($i = 0; $i -lt $length; $i++) {
-        [void]$pkgc.Add(@{})
+        $indice = $pkgc.Add(@{})
         $lastFieldName = ""
-        $pkgp = $pkgf[$i] -split '\n' #pkgparagraph
+        $pkgp = $pkgf[$indice] -split '\n' #pkgparagraph
         for ($j = 0; $j -lt $pkgp.Length; $j++) {
             if ($pkgp[$j].StartsWith('#')) {continue}
 
-            $pkgl = $pkgp[$j] -split ':\s?',2 #pkgline
+            # The current line that we are processing, split by the colon character, so $pkgl[0] would be the key
+            # and $pkgl[1] the value
+            $pkgl = $pkgp[$j] -split ':\s?',2
+
+            # If there is a newline
             if ($pkgp[$j] -match '^\s+') {
-                $pkgc[$i][$lastFieldName] += (($pkgp[$j] -replace '^\s+') + "`n")
+                $pkgc[$indice][$lastFieldName] += (($pkgp[$j] -replace '^\s+') + "`n")
             }
             else {
-                $pkgc[$i][$pkgl[0]] = $pkgl[1] -replace '^\s*'
+                $pkgc[$indice][$pkgl[0]] = $pkgl[1] -replace '^\s*'
                 $lastFieldName = $pkgl[0]
             }
         }
@@ -101,29 +109,31 @@ function Get-DebRepoPackage {
     }
 
     $filelist = @()
-    if ($repo.url -eq "http://apt.thebigboss.org/repofiles/cydia") { # Fucking BigBoss man
-        $filelist += "main/binary-iphoneos-arm/Packages.bz2"
+
+    $rlsc = (ConvertFrom-DebControl Release)
+    $checksums = @("MD5Sum", "SHA1", "SHA256", "SHA512")
+    foreach ($checksum in $checksums) {
+        if (!$rlsc.ContainsKey($checksum)) {
+            continue
+        }
+        # Split the content of the checksum string by line,
+        # Then split it by one or multiple whitespace, and select the 2nd index (filename)
+        # Filter repeat items, then select only the Packages file
+        $filelist = $rlsc[$checksum] -split '\n' | `
+            ForEach-Object {($_ -split '\s+' -ne "Release")[2]} | `
+            Select-Object -Unique | `
+            Select-String -Pattern "Packages" -Raw
+        break
     }
-    else {
-        $rlsc = (ConvertFrom-DebControl Release)
-        $checksums = @("MD5Sum", "SHA1", "SHA256", "SHA512")
-        foreach ($checksum in $checksums) {
-            if (!$rlsc.ContainsKey($checksum)) {
-                continue
-            }
-            $filelist = $rlsc[$checksum] -split '\n' | ForEach-Object {($_ -split '\s+' -ne "Release")[2]} | Select-Object -Unique | Select-String -Pattern "Packages" -Raw
-            break
-        }
 
-        if (!$7z.zstd) {
-            $filelist = $filelist | Select-String -Pattern "zst" -NotMatch -Raw
-        }
+    if (!$7z.zstd) {
+        $filelist = $filelist | Select-String -Pattern "zst" -NotMatch -Raw
+    }
 
-        if ($null -eq $filelist) {
-            $filelist = @("Packages.bz2", "Packages.gz", "Packages.lzma", "Packages.xz", "Packages")
-            if ($7z.zstd) {
-                $filelist += "Packages.zst"
-            }
+    if ($null -eq $filelist) {
+        $filelist = @("Packages.bz2", "Packages.gz", "Packages.lzma", "Packages.xz", "Packages")
+        if ($7z.zstd) {
+            $filelist += "Packages.zst"
         }
     }
 
@@ -136,7 +146,7 @@ function Get-DebRepoPackage {
         Write-Host "==> Attempting to download $pkgf" -foregroundcolor Blue
         try {
             $ext = [System.IO.Path]::GetExtension($pkgf)
-            Invoke-WebRequest -UseBasicParsing ($disturl + $pkgf) -OutFile ("Packages" + $ext) -Headers (Get-Header)
+            Invoke-WebRequest -UseBasicParsing ($disturl + $pkgf) -OutFile ("Packages" + $ext) -Headers (Get-Header) -MaximumRedirection 0
             if ($ext -ne "") {
                 $output.compress = $true
                 $output.format = $ext
@@ -175,14 +185,20 @@ function ConvertFrom-DebPackage {
     param (
         [Parameter(Mandatory, Position=0)]
         [string]$pkgf
-    )
-    $pkgc = ConvertFrom-DebControl $pkgf
-    return @{
-        namesList = $pkgc.Package
-        linksList = $pkgc.Filename
-        versList = $pkgc.Version
-        tagsList = $pkgc.Tag
+   )
+    $output = @{
+        namesList = [System.Collections.ArrayList]@()
+        versList = [System.Collections.ArrayList]@()
+        linksList = [System.Collections.ArrayList]@()
+        tagsList = [System.Collections.ArrayList]@()
     }
+    ConvertFrom-DebControl $pkgf | ForEach-Object {
+        $output.namesList.Add($_.Package)
+        $output.versList.Add($_.Version)
+        $output.linksList.Add($_.Filename)
+        $output.tagsList.Add($_.Tag)
+    }
+    return $output
 }
 
 <#

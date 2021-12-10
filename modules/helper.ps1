@@ -125,6 +125,7 @@ function Get-7zExec {
 }
 
 function ConvertTo-Unix ($path) {
+    $path = Resolve-Path $path
     $utf8NoBomEncoding = New-Object System.Text.UTF8Encoding($False)
     $x = [System.IO.File]::ReadAllText($path)
     $content = $x -replace "`r`n", "`n"
