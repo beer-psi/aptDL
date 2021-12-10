@@ -52,7 +52,7 @@ param (
 . "$PSScriptRoot\..\modules\helper.ps1"
 
 $url = Format-Url $url
-$endpoint = (Get-PaymentEndpoint $url).TrimEnd('/')
+$endpoint = (Get-PaymentEndpoint @{url = $url}).TrimEnd('/')
 $cookies = Resolve-Path $cookies -ErrorAction Stop
 $callback = ""
 
