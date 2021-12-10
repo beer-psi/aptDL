@@ -44,12 +44,11 @@ param (
 
     [switch]$skip,
 
-    [string]$curl = (Get-Command curl).Source,
-
-    [string]$grep = (Get-Command grep).Source
+    [string]$curl = (Get-Command curl).Source
 )
 . "$PSScriptRoot\..\modules\download.ps1"
 . "$PSScriptRoot\..\modules\helper.ps1"
+. "$PSScriptRoot\..\modules\repo\debian.ps1"
 
 $url = Format-Url $url
 $endpoint = (Get-PaymentEndpoint @{url = $url}).TrimEnd('/')
@@ -71,7 +70,7 @@ switch ($url) {
         break
     }
 }
-$callback = $callback | & $grep -Eo -m 1 "sileo:\/\/[a-zA-Z0-9.\/?=_%:|&;-]*"
+$callback = ($callback | Select-String -Pattern "(sileo:\/\/[a-zA-Z0-9.\/?=_%:|&;-]*)").Matches[0].Value
 $sileoqs = Resolve-SileoQueryString $callback
 
 $authentication = @{
