@@ -10,6 +10,9 @@ function Test-InstallerRepo {
 
     try {
         Invoke-WebRequest ($repo.url + 'Release') -Headers (Get-Header) -ErrorAction SilentlyContinue > $null
+
+        # This command will only be reached if iwr was successful, which means the repo has a Release file
+        # so we can somewhat confidently state that this is not an installer one
         return $false
     }
     catch {
@@ -30,15 +33,13 @@ function ConvertFrom-InstallerPackage {
         [Parameter(Mandatory, Position=0)]
         [string]$pkgf
     )
-    $output = @{
-        namesList = [System.Collections.ArrayList]@()
-        versList = [System.Collections.ArrayList]@()
-        linksList = [System.Collections.ArrayList]@()
-    }
+    $output = [System.Collections.ArrayList]@()
     ([xml](Get-Content $pkgf) | ConvertFrom-Plist).packages | ForEach-Object {
-        $output.namesList.Add($_.bundleIdentifier)
-        $output.versList.Add($_.version)
-        $output.linksList.Add($_.location)
+        [void]$output.Add(@{
+            name = $_.bundleIdentifier
+            version = $_.version
+            link = $_.location
+        })
     }
     return $output
 }

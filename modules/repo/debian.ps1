@@ -46,7 +46,7 @@ function ConvertFrom-DebControl {
                 Where-Object {$_} # Removes empty items
     $length = $pkgf.Length
     for ($i = 0; $i -lt $length; $i++) {
-        $indice = $pkgc.Add(@{})
+        $indice = $pkgc.Add([ordered]@{})
         $lastFieldName = ""
         $pkgp = $pkgf[$indice] -split '\n' #pkgparagraph
         for ($j = 0; $j -lt $pkgp.Length; $j++) {
@@ -113,7 +113,7 @@ function Get-DebRepoPackage {
     $rlsc = (ConvertFrom-DebControl Release)
     $checksums = @("MD5Sum", "SHA1", "SHA256", "SHA512")
     foreach ($checksum in $checksums) {
-        if (!$rlsc.ContainsKey($checksum)) {
+        if (!$rlsc.Contains($checksum)) {
             continue
         }
         # Split the content of the checksum string by line,
@@ -170,14 +170,15 @@ function Get-DebRepoPackage {
 .SYNOPSIS
     Import data from a Debian's repo Packages file into ArrayLists
 .DESCRIPTION
-    Read through the uncompressed Packages file line-by-line and put
-    information in their respective arrays:
-    - namesList contains package names
-    - versList contains these packages' versions
-    - linksList contains these packages' locations within the repo
-    - tagsList contains these packages' tags
+    Wrapper function for ConvertFrom-DebControl to get only keys
+    required for downloading:
+    - Package -> name
+    - Version -> version
+    - Filename -> link
+    - Tag -> tag
 
-    On success, a hashtable containing the arrays is returned.
+    On success, an array of hashtable with the aforementioned keys
+    is returned.
 .PARAMETER pkgf
     Location of the Packages file
 #>
@@ -186,17 +187,14 @@ function ConvertFrom-DebPackage {
         [Parameter(Mandatory, Position=0)]
         [string]$pkgf
    )
-    $output = @{
-        namesList = [System.Collections.ArrayList]@()
-        versList = [System.Collections.ArrayList]@()
-        linksList = [System.Collections.ArrayList]@()
-        tagsList = [System.Collections.ArrayList]@()
-    }
+    $output = [System.Collections.ArrayList]@()
     ConvertFrom-DebControl $pkgf | ForEach-Object {
-        $output.namesList.Add($_.Package)
-        $output.versList.Add($_.Version)
-        $output.linksList.Add($_.Filename)
-        $output.tagsList.Add($_.Tag)
+        [void]$output.Add(@{
+            name = $_.Package
+            version = $_.Version
+            link = $_.Filename
+            tag = $_.Tag
+        })
     }
     return $output
 }
