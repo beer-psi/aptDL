@@ -8,6 +8,14 @@
     Check inputfile.psd1 for more in-depth guidance.
     If a file is specified, all other parameters passed through the command
     line will be ignored, except -7z
+.PARAMETER inputsource
+    Pass a *.sources file of this format to the script:
+        URIs:
+        Suites:
+        Components:
+        Type:
+    Some other parameters are available for use when using
+    inputsource.
 .PARAMETER url
     The url of the repo to be downloaded
 .PARAMETER suites
@@ -17,6 +25,8 @@
     Dist repo component.
 .PARAMETER output
     Folder to save the downloaded repo, relative to the root of the script.
+    When used with -inputsource, -output is the root dir of downloaded repos.
+
     Default value: ".\output"
 .PARAMETER cooldown
     Seconds of cooldown between each download, intended to avoid rate limitng
@@ -56,6 +66,10 @@ param (
     [alias('i', 'input')]
     [string]$inputfile,
 
+    [Parameter(Position=0, ParameterSetName="inputsource", Mandatory)]
+    [alias('is')]
+    [string]$inputsource,
+
     [Parameter(Position=0, ParameterSetName="url", Mandatory)]
     [alias('s')]
     [string]$url,
@@ -67,8 +81,9 @@ param (
     [string]$components,
 
     [Parameter(ParameterSetName="url")]
+    [Parameter(ParameterSetName="inputsource")]
     [alias('o')]
-    [string]$output = ".\output",
+    [string]$output,
 
     [Parameter(ParameterSetName="url")]
     [alias('af')]
@@ -79,10 +94,12 @@ param (
     [string[]]$dlpackage,
 
     [Parameter(ParameterSetName="url")]
+    [Parameter(ParameterSetName="inputsource")]
     [alias('c','cd')]
     [double]$cooldown = 5,
 
     [Parameter(ParameterSetName="url")]
+    [Parameter(ParameterSetName="inputsource")]
     [alias('orig','keep','co')]
     [switch]$original,
 
@@ -91,6 +108,7 @@ param (
     [switch]$formatted,
 
     [Parameter(ParameterSetName="url")]
+    [Parameter(ParameterSetName="inputsource")]
     [alias('skip', 'sd')]
     [switch]$skipDownloaded
 )
@@ -122,6 +140,19 @@ $ProgressPreference = "SilentlyContinue"
 if ($PSBoundParameters.ContainsKey('inputfile')) {
     Write-Color "==> Reading input file" -color Blue
     $tasks = Format-InputData (Import-PowerShellDataFile $inputfile)
+    foreach ($task in $tasks.All) {
+        Write-Color ("==> " + $task.repo.url) -color Green
+        try {
+            Get-Repo $task.repo $task.output $task.cooldown $task.original $task.auth $task.skipDownloaded $task.dlpackage
+        }
+        catch {
+            Write-Error ("==> Unhandled exception: {0}" -f $Error[0].Exception.Message)
+            continue
+        }
+    }
+}
+elseif ($PSBoundParameters.ContainsKey('inputsource')) {
+    $tasks = Format-InputData (ConvertFrom-DebSource $inputsource -output $output -cooldown $cooldown -original:$original -skipDownloaded:$skipDownloaded)
     foreach ($task in $tasks.All) {
         Write-Color ("==> " + $task.repo.url) -color Green
         try {
