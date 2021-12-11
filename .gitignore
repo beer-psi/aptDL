@@ -5,6 +5,7 @@ packix
 Packages
 Packages.*
 Release
+*.sources
 
 # I do not want my token showed to the whole world ok
 auth*

@@ -275,3 +275,42 @@ function Get-AuthenticationData {
         purchased = $purchased
     }
 }
+
+function ConvertFrom-DebSource {
+    [cmdletbinding()]
+
+    param (
+        [Parameter(Position=0, Mandatory)]
+        [string]$file,
+
+        [Parameter(Position=1)]
+        [string]$output = './output',
+
+        [double]$cooldown = 3,
+
+        [switch]$original,
+
+        [switch]$skipDownloaded
+    )
+
+    $outputarray = [hashtable]@{
+        cooldown = $cooldown
+        original = $original
+        skipDownloaded = $skipDownloaded
+        All = [System.Collections.ArrayList]@()
+    }
+    ConvertFrom-DebControl $file | ForEach-Object {
+        $authfile = "authentication\{0}.json" -f ($_.URIs -replace '(^\w+:|^)\/\/','').TrimEnd('/')
+        [void]$outputarray.All.Add(@{
+            repo = @{
+                url = $_.URIs
+                suites = $_.Suites
+                components = $_.Components
+            }
+            output = Join-Path -Path $output -ChildPath ($_.URIs -replace '(^\w+:|^)\/\/','')
+            auth = ("", $authfile)[(Test-Path $authfile)]
+            dlpackage = @()
+        })
+    }
+    return $outputarray
+}
