@@ -39,7 +39,7 @@ param (
     [string]$cookies,
 
     [Parameter(Position=4,
-        HelpMessage="Where to write thze authentication file")]
+        HelpMessage="Where to write the authentication file (default ./authentication.json)")]
     [string]$output = "authentication.json",
 
     [switch]$skip,
@@ -78,7 +78,7 @@ $authentication = @{
     device = $model
     token = $sileoqs.token[0]
 }
-ConvertTo-Json $authentication | Out-File -Encoding UTF8 (Resolve-PathForced $output)
+ConvertTo-Json $authentication | Out-File -Encoding utf8NoBOM (Resolve-PathForced $output)
 
 
 
