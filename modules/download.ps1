@@ -1,13 +1,22 @@
 function Get-Header {
     $architecture = ("amd64", "i386")[[System.IntPtr]::Size -eq 4]
-    $PowerShellInfoString = "PowerShell/$($PSVersionTable.PSVersion) "
-    $PowerShellInfoString += "($(("Windows NT", $PSVersionTable.Platform)[$PSVersionTable.ContainsKey('Platform')]); $architecture; $PSEdition)"
+    $PSInfo = "PowerShell/$($PSVersionTable.PSVersion)"
+    $PSPlatform = ($PSVersionTable.Platform, "Win32NT")[$PSEdition -eq "Desktop"]
+    switch ($PSPlatform) {
+        'Win32NT' {
+            $PSPlatform = "({0}; {1}; {2})" -f $([System.Environment]::OSVersion.VersionString -replace 'Microsoft ', ''), $architecture, $PSEdition
+            break
+        }
+        'Unix' {
+            $PSPlatform = "({0}; {1}; {2})" -f $(uname -sr), $architecture, $PSEdition
+        }
+    }
     $headers = @{
         # You should modify these to a linked device's information if downloads for paid packages fail
         "X-Machine" = "iPhone10,5" # Device identifier (e.g. iPhone10,5)
         "X-Unique-ID" = "0000000000000000000000000000000000000000" # Device UDID
         "X-Firmware" = "14.8" # Device version
-        "User-Agent" = "aptDL/1.0 (+https://github.com/extradummythicc/aptDL) $PowerShellInfoString"
+        "User-Agent" = "aptDL/1.0 (+https://github.com/extradummythicc/aptDL) $PSInfo $PSPlatform"
     }
     return $headers
 }
