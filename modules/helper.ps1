@@ -101,7 +101,8 @@ function Format-InputData {
 function Get-7zExec {
     $7z = (Get-Command 7z -ErrorAction SilentlyContinue).Source
     if ($null -eq $7z) {
-        switch ($PSVersionTable.Platform) {
+        $PSPlatform = ($PSVersionTable.Platform, "Win32NT")[$PSEdition -eq "Desktop"]
+        switch ($PSPlatform) {
             'Win32NT' {
                 $files = @("$PSScriptRoot\..\7za.exe", "$PSScriptRoot\..\7za.dll", "$PSScriptRoot\..\7zxa.dll")
                 foreach ($file in $files) {
