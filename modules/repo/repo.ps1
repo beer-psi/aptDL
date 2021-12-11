@@ -44,7 +44,10 @@ function ConvertFrom-Package {
 .PARAMETER dlpackage
     Download packages only from this list; all others are ignored.
 #>
-function Get-Repo($repo, $output = ".\output", $cooldown, $original = $false, $auth, $skipDownloaded = $true, $dlpackage = @()) {
+function Get-Repo($repo, $output, $cooldown = 5, $original = $false, $auth, $skipDownloaded = $true, $dlpackage = @()) {
+    if ($null -eq $output) {
+        $output = ".\output\{0}" -f ($repo.url -replace '(^\w+:|^)\/\/','')
+    }
     $repo.url = Format-Url $repo.url
 
     # Workaround as ternary operators are not available until PowerShell v7
