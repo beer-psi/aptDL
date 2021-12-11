@@ -4,7 +4,7 @@
     cooldown = 3
     original = $false
     skipDownloaded = $true
-    All = @( # Do not change this key name
+    All = [System.Collections.ArrayList]@( # Do not change this key name
         @{
             repo = @{
                 url = "https://apt.procurs.us" # Repo URL
