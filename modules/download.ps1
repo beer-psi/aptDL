@@ -16,7 +16,7 @@ function Get-Header {
         "X-Machine" = "iPhone10,5" # Device identifier (e.g. iPhone10,5)
         "X-Unique-ID" = "0000000000000000000000000000000000000000" # Device UDID
         "X-Firmware" = "14.8" # Device version
-        "User-Agent" = "aptDL/1.0 (+https://github.com/extradummythicc/aptDL) $PSInfo $PSPlatform"
+        "User-Agent" = "aptDL/1.0 (+https://github.com/beerpiss/aptDL) $PSInfo $PSPlatform"
     }
     return $headers
 }
